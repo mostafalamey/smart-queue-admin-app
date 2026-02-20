@@ -6,6 +6,7 @@ import routerProvider, {
   DocumentTitleHandler,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
+
 import { BrowserRouter, Meta, Outlet, Route, Routes } from "react-router";
 import "./App.css";
 import { Toaster } from "./components/refine-ui/notification/toaster";
@@ -13,12 +14,12 @@ import { useNotificationProvider } from "./components/refine-ui/notification/use
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
 import { dataProvider } from "./providers/data";
 import QueueControle from "./pages/QueueControle";
-import Analytics from "./pages/analytics";
+import Analytics from "./pages/Analytics";
 import DepartmentsStructure from "./pages/DepartmentsStructure";
 import Mapping from "./pages/Mapping";
 import Organization from "./pages/organization";
 import UserExperience from "./pages/UserExperience";
-import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react"; // Import the list-start icon
+import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react";
 import { Layout } from "./components/refine-ui/layout/layout";
 
 function App() {
