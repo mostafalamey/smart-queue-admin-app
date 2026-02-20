@@ -7,17 +7,17 @@ import routerProvider, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 
-import { BrowserRouter, Meta, Outlet, Route, Routes } from "react-router";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import "./App.css";
 import { Toaster } from "./components/refine-ui/notification/toaster";
 import { useNotificationProvider } from "./components/refine-ui/notification/use-notification-provider";
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
 import { dataProvider } from "./providers/data";
-import QueueControle from "./pages/QueueControle";
+import QueueControl from "./pages/QueueControl";
 import Analytics from "./pages/Analytics";
 import DepartmentsStructure from "./pages/DepartmentsStructure";
 import Mapping from "./pages/Mapping";
-import Organization from "./pages/organization";
+import Organization from "./pages/Organization";
 import UserExperience from "./pages/UserExperience";
 import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react";
 import { Layout } from "./components/refine-ui/layout/layout";
@@ -39,40 +39,51 @@ function App() {
               }}
 
               resources={[
-                {name: "queue-controle",
+                {
+                  name: "queue-control",
                   list: "/",
-                  meta: {label: "Queue Controle",
+                  meta: {
+                    label: "Queue Control",
                     icon: <ListStart />,
                   }
                 },
                 {
                   name: "analytics",
                   list: "/analytics",
-                  meta: {label: "Analytics",
+                  meta: {
+                    label: "Analytics",
                     icon: <ChartNoAxesCombined />,
                   }
                 },
-                  {name: "departments-structure",
+                  {
+                    name: "departments-structure",
                     list: "/departments-structure",
-                    meta: {label: "Departments Structure",
+                    meta: {
+                      label: "Departments Structure",
                       icon: <Network />,
                     }
                   },
-                  {name: "mapping",
+                  {
+                    name: "mapping",
                     list: "/mapping",
-                    meta: {label: "Mapping",
+                    meta: {
+                      label: "Mapping",
                       icon: <Cast />,
                     }
                   },
-                  {name: "organization",
+                  {
+                    name: "organization",
                     list: "/organization",
-                    meta: {label: "Organization",
+                    meta: {
+                      label: "Organization",
                       icon: <Building />,
                     }
                   },
-                  {name: "user-experience",
+                  {
+                    name: "user-experience",
                     list: "/user-experience",
-                    meta: {label: "User Experience",
+                    meta: {
+                      label: "User Experience",
                       icon: <UsersRound />,
                     }
                   },
@@ -84,7 +95,7 @@ function App() {
                     <Outlet /> {/* This will render the matched child route component */} 
                   </Layout>
                 }>
-                  <Route path="/" element={<QueueControle />} />
+                  <Route path="/" element={<QueueControl />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/departments-structure" element={<DepartmentsStructure />} />
                   <Route path="/mapping" element={<Mapping />} />
