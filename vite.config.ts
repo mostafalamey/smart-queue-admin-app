@@ -11,4 +11,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    // Bind to all interfaces so the admin app is reachable from other LAN machines.
+    // Access via http://<this-machine-ip>:5173 from any device on the same network.
+    host: true,
+    port: 5173,
+  },
 });
