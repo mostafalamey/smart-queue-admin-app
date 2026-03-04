@@ -248,6 +248,7 @@ function SidebarHeader() {
           className={cn(
             "text-sm",
             "font-bold",
+            "tracking-tight",
             "transition-opacity",
             "duration-200",
             {
@@ -255,6 +256,7 @@ function SidebarHeader() {
               "opacity-100": open,
             }
           )}
+          style={{ fontFamily: "var(--font-serif)" }}
         >
           {title.text}
         </h2>

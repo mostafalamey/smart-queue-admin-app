@@ -100,6 +100,7 @@ function MobileHeader() {
           className={cn(
             "text-sm",
             "font-bold",
+            "tracking-tight",
             "transition-opacity",
             "duration-200",
             {
@@ -107,6 +108,7 @@ function MobileHeader() {
               "opacity-100": open,
             }
           )}
+          style={{ fontFamily: "var(--font-serif)" }}
         >
           {title.text}
         </h2>
