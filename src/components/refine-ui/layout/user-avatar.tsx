@@ -4,11 +4,10 @@ import { cn } from "@/lib/utils";
 import { useGetIdentity } from "@refinedev/core";
 
 type User = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  fullName: string;
+  id: string;
+  name: string;
   email: string;
+  role: string;
   avatar?: string;
 };
 
@@ -19,24 +18,29 @@ export function UserAvatar() {
     return <Skeleton className={cn("h-10", "w-10", "rounded-full")} />;
   }
 
-  const { fullName, avatar } = user;
-
   return (
     <Avatar className={cn("h-10", "w-10")}>
-      {avatar && <AvatarImage src={avatar} alt={fullName} />}
-      <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
+      {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
+      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
     </Avatar>
   );
 }
 
-const getInitials = (name = "") => {
-  const names = name.split(" ");
-  let initials = names[0].substring(0, 1).toUpperCase();
+/** Derive initials from a display name or email address. */
+const getInitials = (nameOrEmail = ""): string => {
+  // If it looks like an email, use the local part before @
+  const name = nameOrEmail.includes("@")
+    ? nameOrEmail.split("@")[0]
+    : nameOrEmail;
 
-  if (names.length > 1) {
-    initials += names[names.length - 1].substring(0, 1).toUpperCase();
-  }
-  return initials;
+  const parts = name
+    .replace(/[._-]/g, " ")   // treat separators as spaces
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
 UserAvatar.displayName = "UserAvatar";

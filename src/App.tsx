@@ -1,8 +1,8 @@
-import { GitHubBanner, Refine } from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
+import { Authenticated, Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import routerProvider, {
+  CatchAllNavigate,
   DocumentTitleHandler,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
@@ -13,29 +13,51 @@ import { Toaster } from "./components/refine-ui/notification/toaster";
 import { useNotificationProvider } from "./components/refine-ui/notification/use-notification-provider";
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
 import { dataProvider } from "./providers/data";
+import { authProvider } from "./providers/auth-provider";
 import QueueControl from "./pages/QueueControl";
 import Analytics from "./pages/Analytics";
 import DepartmentsStructure from "./pages/DepartmentsStructure";
 import Mapping from "./pages/Mapping";
 import Organization from "./pages/Organization";
 import UserExperience from "./pages/UserExperience";
+import LoginPage from "./pages/login";
+import ChangePasswordPage from "./pages/login/change-password";
 import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react";
 import { Layout } from "./components/refine-ui/layout/layout";
+import { getStoredUser } from "./lib/stored-user";
+import { Navigate } from "react-router";
+
+/**
+ * Route guard: redirects to /change-password if the current user
+ * still has mustChangePassword=true. Placed inside the Authenticated
+ * wrapper so we know a user exists.
+ */
+function RequirePasswordChanged({ children }: { children: React.ReactNode }) {
+  const user = getStoredUser();
+  if (user?.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+  return <>{children}</>;
+}
 
 function App() {
   return (
     <BrowserRouter>
       <RefineKbarProvider>
         <ThemeProvider>
-          <DevtoolsProvider>
             <Refine
               dataProvider={dataProvider}
+              authProvider={authProvider}
               notificationProvider={useNotificationProvider()}
               routerProvider={routerProvider}
               options={{
                 syncWithLocation: true,
                 warnWhenUnsavedChanges: true,
                 projectId: "3KD91G-bZUWZz-CJXydE",
+                title: {
+                  text: "Smart Queue",
+                  icon: <img src="/logo.svg" alt="Smart Queue" className="w-7 h-7" />,
+                },
               }}
 
               resources={[
@@ -90,11 +112,21 @@ function App() {
               ]}
             >
               <Routes>
-                <Route element={
-                  <Layout>
-                    <Outlet /> {/* This will render the matched child route component */} 
-                  </Layout>
-                }>
+                {/* Protected routes — require authentication + password changed */}
+                <Route
+                  element={
+                    <Authenticated
+                      key="authenticated-routes"
+                      fallback={<CatchAllNavigate to="/login" />}
+                    >
+                      <RequirePasswordChanged>
+                        <Layout>
+                          <Outlet />
+                        </Layout>
+                      </RequirePasswordChanged>
+                    </Authenticated>
+                  }
+                >
                   <Route path="/" element={<QueueControl />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/departments-structure" element={<DepartmentsStructure />} />
@@ -102,14 +134,44 @@ function App() {
                   <Route path="/organization" element={<Organization />} />
                   <Route path="/user-experience" element={<UserExperience />} />
                 </Route>
+
+                {/* Auth routes — only accessible when NOT authenticated */}
+                <Route
+                  element={
+                    <Authenticated
+                      key="auth-pages"
+                      fallback={<Outlet />}
+                    >
+                      {/* If already authenticated, go to home */}
+                      <CatchAllNavigate to="/" />
+                    </Authenticated>
+                  }
+                >
+                  <Route path="/login" element={<LoginPage />} />
+                </Route>
+
+                {/* Change password — accessible when authenticated (forced flow) */}
+                <Route
+                  element={
+                    <Authenticated
+                      key="change-password"
+                      fallback={<CatchAllNavigate to="/login" />}
+                    >
+                      <Outlet />
+                    </Authenticated>
+                  }
+                >
+                  <Route path="/change-password" element={<ChangePasswordPage />} />
+                </Route>
+
+                {/* Catch-all — redirect unmatched paths */}
+                <Route path="*" element={<CatchAllNavigate to="/" />} />
               </Routes>
               <Toaster />
               <RefineKbar />
               <UnsavedChangesNotifier />
               <DocumentTitleHandler />
             </Refine>
-            <DevtoolsPanel />
-          </DevtoolsProvider>
         </ThemeProvider>
       </RefineKbarProvider>
     </BrowserRouter>
