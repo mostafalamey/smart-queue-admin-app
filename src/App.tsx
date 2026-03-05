@@ -24,6 +24,7 @@ import UserExperience from "./pages/UserExperience";
 import LoginPage from "./pages/login";
 import ChangePasswordPage from "./pages/login/change-password";
 import Unauthorized from "./pages/Unauthorized";
+import Welcome from "./pages/Welcome";
 import { RequireAccess } from "./components/require-access";
 import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react";
 import { Layout } from "./components/refine-ui/layout/layout";
@@ -67,7 +68,7 @@ function App() {
               resources={[
                 {
                   name: "queue-control",
-                  list: "/",
+                  list: "/queue-control",
                   meta: {
                     label: "Queue Control",
                     icon: <ListStart />,
@@ -131,7 +132,8 @@ function App() {
                     </Authenticated>
                   }
                 >
-                  <Route path="/" element={<RequireAccess resource="queue-control"><QueueControl /></RequireAccess>} />
+                  <Route path="/" element={<Welcome />} />
+                  <Route path="/queue-control" element={<RequireAccess resource="queue-control"><QueueControl /></RequireAccess>} />
                   <Route path="/analytics" element={<RequireAccess resource="analytics"><Analytics /></RequireAccess>} />
                   <Route path="/departments-structure" element={<RequireAccess resource="departments-structure"><DepartmentsStructure /></RequireAccess>} />
                   <Route path="/mapping" element={<RequireAccess resource="mapping"><Mapping /></RequireAccess>} />

@@ -55,13 +55,21 @@ function withManagerScope(provider: DataProvider): DataProvider {
 
     getList: (params) => {
       const user = getStoredUser();
-      if (user?.role === "MANAGER" && user.departmentId) {
+      if (user?.role === "MANAGER") {
+        if (!user.departmentId) {
+          return Promise.reject(
+            new Error("MANAGER user has no departmentId — cannot fetch unscoped data."),
+          );
+        }
         const deptFilter = {
           field: "departmentId",
           operator: "eq" as const,
           value: user.departmentId,
         };
-        params.filters = [...(params.filters ?? []), deptFilter];
+        return provider.getList({
+          ...params,
+          filters: [...(params.filters ?? []), deptFilter],
+        });
       }
       return provider.getList(params);
     },

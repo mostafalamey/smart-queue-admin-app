@@ -25,26 +25,23 @@ import {
   useLink,
   useMenu,
   useRefineOptions,
-  useCan,
   type TreeMenuItem,
 } from "@refinedev/core";
 import { ChevronRight, ListIcon } from "lucide-react";
 import React from "react";
+import { getStoredUser } from "@/lib/stored-user";
+import { ROLE_RESOURCES } from "@/providers/access-control-provider";
 
 /**
- * Filter menu items by access control. Runs useCan for each resource
- * and returns only the items the current user is allowed to see.
+ * Filter menu items by access control. Uses the stored user's role
+ * and the ROLE_RESOURCES map to deterministically filter the sidebar.
  */
 function useFilteredMenu() {
   const { menuItems, selectedKey } = useMenu();
 
-  // Pre-check access for every top-level resource
-  const checks = menuItems.map((item) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useCan({ resource: item.name, action: "list" })
-  );
-
-  const filtered = menuItems.filter((_, i) => checks[i].data?.can !== false);
+  const user = getStoredUser();
+  const allowed = user ? ROLE_RESOURCES[user.role] ?? [] : [];
+  const filtered = menuItems.filter((item) => allowed.includes(item.name));
 
   return { menuItems: filtered, selectedKey };
 }

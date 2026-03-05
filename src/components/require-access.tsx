@@ -9,7 +9,7 @@ interface Props {
 /**
  * Route-level access guard. Renders children only if the current user
  * has "list" permission for the given resource. Otherwise redirects
- * to /unauthorized.
+ * to the welcome page.
  */
 export function RequireAccess({ resource, children }: Props) {
   const { data, isLoading } = useCan({ resource, action: "list" });
@@ -17,7 +17,7 @@ export function RequireAccess({ resource, children }: Props) {
   if (isLoading) return null;
 
   if (!data?.can) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

@@ -9,7 +9,7 @@ import { getStoredUser } from "@/lib/stored-user";
  *
  * Resource names must match the `name` field in each Refine resource declaration.
  */
-const ROLE_RESOURCES: Record<string, readonly string[]> = {
+export const ROLE_RESOURCES: Record<string, readonly string[]> = {
   ADMIN: [
     "queue-control",
     "analytics",

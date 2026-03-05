@@ -16,7 +16,7 @@ export default function Unauthorized() {
         administrator if you believe this is a mistake.
       </p>
       <Button variant="outline" onClick={() => navigate("/")}>
-        Go to Dashboard
+        Back to Home
       </Button>
     </div>
   );
