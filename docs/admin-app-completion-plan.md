@@ -25,13 +25,15 @@ The admin app has a **production-quality shell** with zero business logic:
 | Notification system (Sonner) | Done |
 | 46 shadcn/ui primitives | Done |
 | Refine CRUD primitives (DataTable, buttons, views) | Done |
-| REST data provider (`@refinedev/rest`) | Configured, unused |
+| REST data provider (`@refinedev/rest`) | Configured, in use (Queue Control) |
 | Auth forms (login, change-password) | ✅ Implemented (Phase A) |
 | **Auth provider (Refine `authProvider`)** | ✅ Implemented (Phase A) |
 | **Access control provider (RBAC)** | ✅ Implemented (Phase B) |
+| **Queue Control page** | ✅ Implemented (Phase C) — full dashboard, search, detail, priority change |
 | **WebSocket / realtime integration** | **Not implemented** |
 | **i18n (Arabic/English)** | **Not configured** |
-| **All page bodies (8 pages)** | **Empty stubs** |
+| **Organization sub-pages (5 pages)** | **Empty stubs** |
+| **User Experience, Analytics pages** | **Empty stubs** |
 
 ### Backend Endpoint Availability
 
@@ -49,8 +51,11 @@ The admin app has a **production-quality shell** with zero business logic:
 | **Device registry (list/create devices)** | **Not yet built** |
 | **Analytics overview endpoint** | **Not yet built** |
 | **Audit log listing** | **Not yet built** |
-| **Ticket detail lookup by ID** | **Not yet built** |
-| **Ticket lock/unlock (admin priority change)** | **Not yet built** |
+| Ticket detail lookup by ID | ✅ Available (`GET /admin/tickets/:id`) |
+| Ticket search by number/phone | ✅ Available (`GET /admin/tickets/search`) |
+| Ticket lock/unlock (admin priority change) | ✅ Available (`POST /admin/tickets/:id/lock`, `/unlock`) |
+| Admin priority change | ✅ Available (`POST /admin/tickets/:id/change-priority`) |
+| Priority categories listing | ✅ Available (`GET /admin/priority-categories`) |
 
 ---
 
@@ -103,34 +108,36 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ---
 
-### Phase C — Queue Control Page
+### Phase C — Queue Control Page ✅
 **Goal:** Live queue dashboard with ticket lookup and priority change.
 
 **Priority:** High — core operational tab for Admin + Manager.
 
-**Todos:**
-1. **Department selector** (Admin: all departments dropdown; Manager: auto-locked to assigned department).
-2. **Service selector** scoped to the selected department (calls `GET /departments/:id/services`).
-3. **Queue status widgets** — display waiting, in-progress, serving, completed, no-show counts (calls `GET /queue/services/:serviceId/summary`).
-4. **Now-serving indicator** — show the ticket currently being served at each counter.
-5. **WebSocket integration** — subscribe to `queue.updated` events for the selected service; auto-refresh summary on change.
-6. **Waiting list table** — display the ordered waiting queue (calls `GET /queue/services/:serviceId/waiting`) with columns: position, ticket number, phone, priority, wait time.
-7. **Ticket lookup** — search by ticket number or phone number.
-   - *Backend dependency:* `GET /tickets/:ticketId` or a search endpoint — **needs backend work or client-side filter on waiting list**.
-8. **Ticket detail panel** — read-only fields + audit trail preview.
-   - *Backend dependency:* ticket detail endpoint — **needs backend work**.
-9. **Priority change flow:**
-   - Lock the ticket (`POST /queue/tickets/:ticketId/lock`) — **needs backend work**.
-   - Show priority change UI (Normal / VIP / Emergency).
-   - Submit change — can reuse `POST /teller/change-priority` for now.
-   - Audit trail recorded server-side.
-10. **Enforce rule:** priority change blocked if ticket status ≠ WAITING (UI + server).
+**Completed:** 2026-03-05 — Full dashboard with selectors, summary cards, now-serving, waiting list, ticket search, ticket detail panel, and priority change flow. WebSocket deferred to Phase H (using 10 s polling).
 
-**Backend dependencies (new endpoints needed):**
-- `GET /tickets/:ticketId` — ticket detail lookup
-- `GET /tickets?phone=...` — ticket search by phone
-- `POST /queue/tickets/:ticketId/lock` — ticket locking
-- `POST /queue/tickets/:ticketId/unlock` — ticket unlock
+**Backend endpoints built (in `server.ts`):**
+- `GET /admin/tickets/search?q=...&serviceId=...` — search by ticket number or phone
+- `GET /admin/tickets/:ticketId` — full ticket detail with events (audit trail)
+- `POST /admin/tickets/:ticketId/lock` — acquire 2-minute lock for priority change
+- `POST /admin/tickets/:ticketId/unlock` — release lock
+- `POST /admin/tickets/:ticketId/change-priority` — change priority (validates lock + WAITING status)
+- `GET /admin/priority-categories` — list priority categories for the hospital
+
+**Todos:**
+1. ✅ **Department selector** (Admin: all departments dropdown; Manager: auto-locked to assigned department).
+2. ✅ **Service selector** scoped to the selected department (calls `GET /departments/:id/services`).
+3. ✅ **Queue status widgets** — display waiting, called, serving, completed, no-show counts (calls `GET /queue/services/:serviceId/summary`). 10-second polling until WebSocket is wired.
+4. ✅ **Now-serving indicator** — show the ticket currently being served with status badge and elapsed time.
+5. **WebSocket integration** — deferred to Phase H. Currently using 10 s polling.
+6. ✅ **Waiting list table** — display the ordered waiting queue (calls `GET /queue/services/:serviceId/waiting`) with columns: position, ticket number, priority badge, wait time. Rows are clickable to open ticket detail.
+7. ✅ **Ticket lookup** — search by ticket number or phone number via `GET /admin/tickets/search`. Debounced search input with dropdown results. Clicking a result opens the detail panel.
+8. ✅ **Ticket detail panel** — Sheet side-panel showing all ticket fields + full audit trail (events). Includes "Change Priority" button for WAITING tickets.
+9. ✅ **Priority change flow:**
+   - Lock the ticket (`POST /admin/tickets/:ticketId/lock`) — 2-minute lock with conflict detection.
+   - Show priority change UI listing all hospital priority categories.
+   - Submit change via `POST /admin/tickets/:ticketId/change-priority`.
+   - Lock auto-released after successful change; audit trail recorded server-side.
+10. ✅ **Enforce rule:** priority change blocked if ticket status ≠ WAITING (UI disables button + server validates in both lock and change-priority endpoints).
 
 **Branch:** `feature/admin-queue-control`
 
@@ -392,16 +399,16 @@ Phase H (Realtime) ◄── after Phase C ────►│    │
 
 Phases C through F can be developed **in parallel** once B is complete, subject to backend endpoint availability. Recommended sequencing by backend readiness:
 
-| Order | Phase | Backend Ready? |
-|-------|-------|----------------|
-| 1 | A — Auth | Yes |
-| 2 | B — RBAC | Yes |
-| 3 | C — Queue Control | Partially (need ticket lookup + lock) |
-| 4 | D — Organization | Partially (transfer reasons ready; user mgmt, dept CRUD, mapping, org metadata need backend work) |
-| 5 | E — User Experience | Needs patient text config endpoint |
-| 6 | F — Analytics | Needs analytics endpoints |
-| 7 | G — i18n | Independent |
-| 8 | H — Realtime | Independent (after C) |
+| Order | Phase | Status |
+|-------|-------|--------|
+| 1 | A — Auth | ✅ Complete |
+| 2 | B — RBAC | ✅ Complete |
+| 3 | C — Queue Control | ✅ Complete — dashboard, search, detail, priority change (WebSocket deferred to Phase H) |
+| 4 | D — Organization | Not started (transfer reasons ready; user mgmt, dept CRUD, mapping, org metadata need backend work) |
+| 5 | E — User Experience | Not started (needs patient text config endpoint) |
+| 6 | F — Analytics | Not started (needs analytics endpoints) |
+| 7 | G — i18n | Not started (independent) |
+| 8 | H — Realtime | Not started (independent, after C) |
 | 9 | I — Polish | Last |
 
 ---
