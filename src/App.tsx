@@ -24,6 +24,21 @@ import LoginPage from "./pages/login";
 import ChangePasswordPage from "./pages/login/change-password";
 import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react";
 import { Layout } from "./components/refine-ui/layout/layout";
+import { getStoredUser } from "./lib/stored-user";
+import { Navigate } from "react-router";
+
+/**
+ * Route guard: redirects to /change-password if the current user
+ * still has mustChangePassword=true. Placed inside the Authenticated
+ * wrapper so we know a user exists.
+ */
+function RequirePasswordChanged({ children }: { children: React.ReactNode }) {
+  const user = getStoredUser();
+  if (user?.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+  return <>{children}</>;
+}
 
 function App() {
   return (
@@ -97,16 +112,18 @@ function App() {
               ]}
             >
               <Routes>
-                {/* Protected routes — require authentication */}
+                {/* Protected routes — require authentication + password changed */}
                 <Route
                   element={
                     <Authenticated
                       key="authenticated-routes"
                       fallback={<CatchAllNavigate to="/login" />}
                     >
-                      <Layout>
-                        <Outlet />
-                      </Layout>
+                      <RequirePasswordChanged>
+                        <Layout>
+                          <Outlet />
+                        </Layout>
+                      </RequirePasswordChanged>
                     </Authenticated>
                   }
                 >
@@ -146,6 +163,9 @@ function App() {
                 >
                   <Route path="/change-password" element={<ChangePasswordPage />} />
                 </Route>
+
+                {/* Catch-all — redirect unmatched paths */}
+                <Route path="*" element={<CatchAllNavigate to="/" />} />
               </Routes>
               <Toaster />
               <RefineKbar />

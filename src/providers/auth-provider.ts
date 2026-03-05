@@ -128,6 +128,16 @@ export const authProvider: AuthProvider = {
     const user = getStoredUser();
 
     if (token && user) {
+      // Verify stored user still has an allowed role
+      if (!ADMIN_APP_ROLES.includes(user.role as (typeof ADMIN_APP_ROLES)[number])) {
+        clearTokens();
+        clearStoredUser();
+        return {
+          authenticated: false,
+          redirectTo: "/login",
+          error: { name: "FORBIDDEN", message: "Staff accounts cannot access the admin app." },
+        };
+      }
       return { authenticated: true };
     }
 
@@ -143,6 +153,18 @@ export const authProvider: AuthProvider = {
 
         if (res.ok) {
           const data: LoginResponse = await res.json();
+
+          // Block disallowed roles even after a successful refresh
+          if (!ADMIN_APP_ROLES.includes(data.user.role as (typeof ADMIN_APP_ROLES)[number])) {
+            clearTokens();
+            clearStoredUser();
+            return {
+              authenticated: false,
+              redirectTo: "/login",
+              error: { name: "FORBIDDEN", message: "Staff accounts cannot access the admin app." },
+            };
+          }
+
           setAccessToken(data.auth.accessToken);
           setRefreshToken(data.auth.refreshToken);
           setStoredUser(data.user);

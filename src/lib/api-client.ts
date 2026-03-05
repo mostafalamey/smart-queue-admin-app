@@ -1,6 +1,14 @@
 import { API_URL } from "@/providers/constants";
 
 // ─── Token storage (in-memory for access, localStorage for refresh) ─────────
+//
+// TODO(security): Refresh tokens should be stored in HttpOnly Secure SameSite
+// cookies set by the backend.  This requires server-side changes to POST
+// /auth/login, /auth/refresh, and /auth/logout to use Set-Cookie headers
+// instead of returning the token in the JSON body.  Until then, localStorage
+// is used as a **dev-only** convenience.  Do NOT ship this to an internet-
+// facing production environment without migrating to cookie-based flow.
+//
 let accessToken: string | null = null;
 
 const REFRESH_TOKEN_KEY = "sq_refresh_token";
@@ -86,6 +94,24 @@ async function refreshTokens(): Promise<LoginResponse | null> {
 }
 
 /**
+ * Mutex-protected silent refresh. Shared by apiFetch and the ky afterResponse hook
+ * so concurrent 401s coalesce into a single refresh call.
+ */
+export async function silentRefresh(): Promise<LoginResponse | null> {
+  if (!getRefreshToken()) return null;
+
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refreshPromise = refreshTokens().finally(() => {
+      isRefreshing = false;
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+}
+
+/**
  * Authenticated fetch wrapper.
  * Automatically attaches Bearer token and retries once on 401 via token refresh.
  */
@@ -106,19 +132,17 @@ export async function apiFetch(
   let res = await fetch(url, { ...init, headers });
 
   // On 401, attempt a single token refresh and retry
-  if (res.status === 401 && getRefreshToken()) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      refreshPromise = refreshTokens().finally(() => {
-        isRefreshing = false;
-        refreshPromise = null;
-      });
-    }
-
-    const refreshResult = await refreshPromise;
-    if (refreshResult) {
-      headers.set("Authorization", `Bearer ${refreshResult.auth.accessToken}`);
-      res = await fetch(url, { ...init, headers });
+  if (res.status === 401) {
+    try {
+      const refreshResult = await silentRefresh();
+      if (refreshResult) {
+        headers.set("Authorization", `Bearer ${refreshResult.auth.accessToken}`);
+        res = await fetch(url, { ...init, headers });
+      }
+    } catch {
+      // Refresh failed (network error, 5xx, etc.) — clear stale tokens and
+      // fall through to return the original 401 response.
+      clearTokens();
     }
   }
 

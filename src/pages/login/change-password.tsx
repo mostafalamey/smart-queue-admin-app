@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useGetIdentity, useLogout, useNotification } from "@refinedev/core";
 import { useNavigate } from "react-router";
 import { InputPassword } from "@/components/refine-ui/form/input-password";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { apiJson } from "@/lib/api-client";
-import { setStoredUser, type StoredUser } from "@/lib/stored-user";
+import { getStoredUser, setStoredUser, type StoredUser } from "@/lib/stored-user";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 const PASSWORD_MIN_LENGTH = 12;
@@ -38,7 +38,7 @@ export default function ChangePasswordPage() {
     mustChangePassword: boolean;
   }>();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -68,12 +68,13 @@ export default function ChangePasswordPage() {
       });
 
       // Update stored user to clear mustChangePassword
-      if (identity) {
+      const source = identity ?? getStoredUser();
+      if (source) {
         setStoredUser({
-          id: identity.id,
-          email: identity.email,
-          role: identity.role as StoredUser["role"],
-          departmentId: identity.departmentId,
+          id: source.id,
+          email: source.email,
+          role: source.role as StoredUser["role"],
+          departmentId: source.departmentId,
           mustChangePassword: false,
         });
       }

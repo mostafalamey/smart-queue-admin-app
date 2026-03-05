@@ -26,8 +26,8 @@ The admin app has a **production-quality shell** with zero business logic:
 | 46 shadcn/ui primitives | Done |
 | Refine CRUD primitives (DataTable, buttons, views) | Done |
 | REST data provider (`@refinedev/rest`) | Configured, unused |
-| Auth forms (sign-in, sign-up, forgot-password) | Scaffolded, not wired |
-| **Auth provider (Refine `authProvider`)** | **Not implemented** |
+| Auth forms (login, change-password) | ✅ Implemented (Phase A) |
+| **Auth provider (Refine `authProvider`)** | ✅ Implemented (Phase A) |
 | **Access control provider (RBAC)** | **Not implemented** |
 | **WebSocket / realtime integration** | **Not implemented** |
 | **i18n (Arabic/English)** | **Not configured** |
@@ -56,19 +56,21 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ## Completion Phases
 
-### Phase A — Authentication & Session Management
+### Phase A — Authentication & Session Management ✅
 **Goal:** Wire login, token management, and session lifecycle into Refine.
 
 **Priority:** Highest — blocks everything else.
 
+**Completed:** 2026-03-04
+
 **Todos:**
-1. **Create `authProvider`** for Refine that calls `POST /auth/login`, stores JWT access token in memory and refresh token in HttpOnly cookie (or localStorage for dev), and returns user identity with role.
-2. **Wire `<Authenticated>` wrapper** around the `<Layout>` so unauthenticated users redirect to `/login`.
-3. **Create `/login` route** using the existing `SignInForm` component, connected to the authProvider.
-4. **Implement token refresh logic** — intercept 401 responses, call `POST /auth/refresh`, retry the original request.
-5. **Create `/change-password` route** — for the `mustChangePassword` flow on first login; use the existing `InputPassword` component, call `POST /auth/change-password`.
-6. **Add logout flow** — clear tokens, call `POST /auth/logout`, redirect to `/login`.
-7. **Store user identity** (id, name, email, role, departmentId) in Refine's `getIdentity` for downstream RBAC and scoping.
+1. ✅ **Create `authProvider`** for Refine that calls `POST /auth/login`, stores JWT access token in memory and refresh token in localStorage, and returns user identity with role. Role enforcement blocks Staff from admin app.
+2. ✅ **Wire `<Authenticated>` wrapper** around the `<Layout>` so unauthenticated users redirect to `/login`.
+3. ✅ **Create `/login` route** — bespoke login page with Smart Queue branding, error handling (invalid credentials, account locked, rate limit).
+4. ✅ **Implement token refresh logic** — intercept 401 responses via mutex pattern in `apiFetch()`, call `POST /auth/refresh`, retry the original request. Silent refresh in `check()` on page reload.
+5. ✅ **Create `/change-password` route** — forced flow for `mustChangePassword` users with strength indicators and client-side validation (12+ chars, uppercase, lowercase, digit, symbol).
+6. ✅ **Add logout flow** — best-effort `POST /auth/logout`, clear tokens + stored user, redirect to `/login`.
+7. ✅ **Store user identity** (id, email, role, departmentId, mustChangePassword) in Refine's `getIdentity` via `stored-user.ts` for downstream RBAC and scoping.
 
 **Backend dependencies:** None — all auth endpoints exist.
 
@@ -374,7 +376,7 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ## Phase Dependency Graph
 
-```
+```text
 Phase A (Auth) ──────────────────────────────┐
     │                                         │
     ▼                                         │
@@ -448,7 +450,7 @@ This allows UI development to proceed **without blocking on backend delivery**.
 
 ## File/Folder Structure Plan
 
-```
+```text
 src/
 ├── providers/
 │   ├── auth-provider.ts          ← Phase A
