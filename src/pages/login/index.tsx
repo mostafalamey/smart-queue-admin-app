@@ -52,7 +52,7 @@ export default function LoginPage() {
           />
           <h1
             className="text-2xl font-bold tracking-tight text-foreground"
-            style={{ fontFamily: "var(--font-serif)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Smart Queue
           </h1>

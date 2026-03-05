@@ -7,10 +7,17 @@ import { cn } from "@/lib/utils";
 import type { PropsWithChildren } from "react";
 import { Sidebar } from "./sidebar";
 
+function getSidebarDefault(): boolean {
+  if (typeof document === "undefined") return true;
+  const match = document.cookie.split(";").find((c) => c.trim().startsWith("sidebar_state="));
+  if (!match) return true;
+  return match.split("=")[1].trim() === "true";
+}
+
 export function Layout({ children }: PropsWithChildren) {
   return (
     <ThemeProvider>
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={getSidebarDefault()}>
         <Sidebar />
         <SidebarInset>
           <Header />

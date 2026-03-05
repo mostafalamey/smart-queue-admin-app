@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -64,7 +65,7 @@ export function Sidebar() {
           "pt-2",
           "pb-2",
           "border-r",
-          "border-border",
+          "border-sidebar-border",
           {
             "px-3": open,
             "px-1": !open,
@@ -118,7 +119,7 @@ function SidebarItemGroup({ item, selectedKey }: MenuItemProps) {
           "text-xs",
           "font-semibold",
           "uppercase",
-          "text-muted-foreground",
+          "text-sidebar-foreground/40",
           "transition-all",
           "duration-200",
           {
@@ -148,8 +149,31 @@ function SidebarItemGroup({ item, selectedKey }: MenuItemProps) {
   );
 }
 
+const SIDEBAR_COLLAPSED_KEY = "sq:sidebar_collapsed";
+
+function getSidebarCollapsedMap(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
 function SidebarItemCollapsible({ item, selectedKey }: MenuItemProps) {
   const { name, children } = item;
+  const itemKey = item.key ?? name;
+
+  const [isOpen, setIsOpen] = useState<boolean>(() => {
+    const map = getSidebarCollapsedMap();
+    return map[itemKey] ?? true;
+  });
+
+  function handleOpenChange(next: boolean) {
+    setIsOpen(next);
+    const map = getSidebarCollapsedMap();
+    map[itemKey] = next;
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(map));
+  }
 
   const chevronIcon = (
     <ChevronRight
@@ -157,7 +181,7 @@ function SidebarItemCollapsible({ item, selectedKey }: MenuItemProps) {
         "h-4",
         "w-4",
         "shrink-0",
-        "text-muted-foreground",
+        "text-sidebar-foreground/50",
         "transition-transform",
         "duration-200",
         "group-data-[state=open]:rotate-90"
@@ -166,7 +190,11 @@ function SidebarItemCollapsible({ item, selectedKey }: MenuItemProps) {
   );
 
   return (
-    <Collapsible key={`collapsible-${name}`} className={cn("w-full", "group")}>
+    <Collapsible
+      key={`collapsible-${name}`}
+      open={isOpen}
+      onOpenChange={handleOpenChange}
+      className={cn("w-full", "group")}>
       <CollapsibleTrigger asChild>
         <SidebarButton item={item} rightIcon={chevronIcon} />
       </CollapsibleTrigger>
@@ -229,63 +257,29 @@ function SidebarHeader() {
   const { title } = useRefineOptions();
   const { open, isMobile } = useShadcnSidebar();
 
+  // Collapsed desktop: show icon centred with trigger below it
+  if (!open && !isMobile) {
+    return (
+      <ShadcnSidebarHeader className="p-0 border-b border-sidebar-border flex-col items-center justify-center py-2.5 gap-2 overflow-hidden">
+        <div className="flex items-center justify-center w-full">{title.icon}</div>
+        <ShadcnSidebarTrigger className="text-sidebar-foreground/60 hover:text-sidebar-foreground h-7 w-7" />
+      </ShadcnSidebarHeader>
+    );
+  }
+
+  // Open / mobile: full logo + title + trigger row
   return (
-    <ShadcnSidebarHeader
-      className={cn(
-        "p-0",
-        "h-16",
-        "border-b",
-        "border-border",
-        "flex-row",
-        "items-center",
-        "justify-between",
-        "overflow-hidden"
-      )}
-    >
-      <div
-        className={cn(
-          "whitespace-nowrap",
-          "flex",
-          "flex-row",
-          "h-full",
-          "items-center",
-          "justify-start",
-          "gap-2",
-          "transition-discrete",
-          "duration-200",
-          {
-            "pl-3": !open,
-            "pl-5": open,
-          }
-        )}
-      >
+    <ShadcnSidebarHeader className="p-0 h-16 border-b border-sidebar-border flex-row items-center justify-between overflow-hidden">
+      <div className="whitespace-nowrap flex flex-row h-full items-center justify-start gap-2 pl-5">
         <div>{title.icon}</div>
         <h2
-          className={cn(
-            "text-sm",
-            "font-bold",
-            "tracking-tight",
-            "transition-opacity",
-            "duration-200",
-            {
-              "opacity-0": !open,
-              "opacity-100": open,
-            }
-          )}
-          style={{ fontFamily: "var(--font-serif)" }}
+          className="text-sm font-bold tracking-tight text-sidebar-foreground"
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           {title.text}
         </h2>
       </div>
-
-      <ShadcnSidebarTrigger
-        className={cn("text-muted-foreground", "mr-1.5", {
-          "opacity-0": !open,
-          "opacity-100": open || isMobile,
-          "pointer-events-auto": open || isMobile,
-          "pointer-events-none": !open && !isMobile,
-        })}
-      />
+      <ShadcnSidebarTrigger className="text-sidebar-foreground/60 hover:text-sidebar-foreground mr-1.5" />
     </ShadcnSidebarHeader>
   );
 }
@@ -302,8 +296,8 @@ type IconProps = {
 function ItemIcon({ icon, isSelected }: IconProps) {
   return (
     <div
-      className={cn("w-4", {
-        "text-muted-foreground": !isSelected,
+      className={cn("w-4 shrink-0", {
+        "text-sidebar-foreground/60": !isSelected,
         "text-sidebar-primary-foreground": isSelected,
       })}
     >
@@ -343,7 +337,7 @@ function SidebarButton({
           "font-normal": !isSelected,
           "font-semibold": isSelected,
           "text-sidebar-primary-foreground": isSelected,
-          "text-foreground": !isSelected,
+          "text-sidebar-foreground": !isSelected,
         })}
       >
         {getDisplayName(item)}
@@ -359,11 +353,12 @@ function SidebarButton({
       size="lg"
       className={cn(
         "flex w-full items-center justify-start gap-2 py-2 !px-3 text-sm",
+        "text-sidebar-foreground hover:!bg-sidebar-accent hover:!text-sidebar-accent-foreground",
         {
           "bg-sidebar-primary": isSelected,
           "hover:!bg-sidebar-primary/90": isSelected,
           "text-sidebar-primary-foreground": isSelected,
-          "hover:text-sidebar-primary-foreground": isSelected,
+          "hover:!text-sidebar-primary-foreground": isSelected,
         },
         className
       )}

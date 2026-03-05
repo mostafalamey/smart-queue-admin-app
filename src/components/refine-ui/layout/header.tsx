@@ -28,14 +28,15 @@ function DesktopHeader() {
         "sticky",
         "top-0",
         "flex",
-        "h-16",
+        "h-14",
         "shrink-0",
         "items-center",
         "gap-4",
         "border-b",
         "border-border",
-        "bg-sidebar",
-        "pr-3",
+        "bg-background/95",
+        "backdrop-blur-sm",
+        "pr-4",
         "justify-end",
         "z-40"
       )}
@@ -63,14 +64,15 @@ function MobileHeader() {
         "gap-2",
         "border-b",
         "border-border",
-        "bg-sidebar",
+        "bg-background/95",
+        "backdrop-blur-sm",
         "pr-3",
         "justify-between",
         "z-40"
       )}
     >
       <SidebarTrigger
-        className={cn("text-muted-foreground", "rotate-180", "ml-1", {
+        className={cn("text-foreground/60", "rotate-180", "ml-1", {
           "opacity-0": open,
           "opacity-100": !open || isMobile,
           "pointer-events-auto": !open || isMobile,
@@ -108,7 +110,7 @@ function MobileHeader() {
               "opacity-100": open,
             }
           )}
-          style={{ fontFamily: "var(--font-serif)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           {title.text}
         </h2>

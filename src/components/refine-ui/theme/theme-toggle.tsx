@@ -35,11 +35,12 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       onClick={cycleTheme}
       className={cn(
         "rounded-full",
-        "border-sidebar-border",
+        "border-border",
         "bg-transparent",
+        "hover:bg-muted",
         className,
-        "h-10",
-        "w-10"
+        "h-9",
+        "w-9"
       )}
     >
       <Sun
