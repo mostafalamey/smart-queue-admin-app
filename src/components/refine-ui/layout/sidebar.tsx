@@ -29,10 +29,26 @@ import {
 } from "@refinedev/core";
 import { ChevronRight, ListIcon } from "lucide-react";
 import React from "react";
+import { getStoredUser } from "@/lib/stored-user";
+import { ROLE_RESOURCES } from "@/providers/access-control-provider";
+
+/**
+ * Filter menu items by access control. Uses the stored user's role
+ * and the ROLE_RESOURCES map to deterministically filter the sidebar.
+ */
+function useFilteredMenu() {
+  const { menuItems, selectedKey } = useMenu();
+
+  const user = getStoredUser();
+  const allowed = user ? ROLE_RESOURCES[user.role] ?? [] : [];
+  const filtered = menuItems.filter((item) => allowed.includes(item.name));
+
+  return { menuItems: filtered, selectedKey };
+}
 
 export function Sidebar() {
   const { open } = useShadcnSidebar();
-  const { menuItems, selectedKey } = useMenu();
+  const { menuItems, selectedKey } = useFilteredMenu();
 
   return (
     <ShadcnSidebar collapsible="icon" className={cn("border-none")}>

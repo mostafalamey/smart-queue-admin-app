@@ -4,6 +4,7 @@ const USER_KEY = "sq_user";
 export interface StoredUser {
   id: string;
   email: string;
+  name?: string | null;
   role: "ADMIN" | "IT" | "MANAGER" | "STAFF";
   departmentId?: string;
   mustChangePassword: boolean;

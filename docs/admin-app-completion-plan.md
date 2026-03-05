@@ -28,7 +28,7 @@ The admin app has a **production-quality shell** with zero business logic:
 | REST data provider (`@refinedev/rest`) | Configured, unused |
 | Auth forms (login, change-password) | ✅ Implemented (Phase A) |
 | **Auth provider (Refine `authProvider`)** | ✅ Implemented (Phase A) |
-| **Access control provider (RBAC)** | **Not implemented** |
+| **Access control provider (RBAC)** | ✅ Implemented (Phase B) |
 | **WebSocket / realtime integration** | **Not implemented** |
 | **i18n (Arabic/English)** | **Not configured** |
 | **All 6 page bodies** | **Empty stubs** |
@@ -78,21 +78,23 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ---
 
-### Phase B — RBAC & Access Control
+### Phase B — RBAC & Access Control ✅
 **Goal:** Enforce role-based tab visibility and page-level access.
 
 **Priority:** High — must follow immediately after auth.
 
+**Completed:** 2026-03-04
+
 **Todos:**
-1. **Create `accessControlProvider`** for Refine implementing the RBAC matrix:
+1. ✅ **Create `accessControlProvider`** for Refine implementing the RBAC matrix:
    - Admin → all 6 tabs
    - IT → User Experience + Mapping only
    - Manager → Queue Control + Analytics only
    - Block access server-side AND client-side
-2. **Filter sidebar items** — use `useCanAccess` (or equivalent) to conditionally render sidebar links per role.
-3. **Add route guards** — redirect to an "unauthorized" page if a user navigates to a forbidden tab.
-4. **Scope Manager data** — inject the manager's `departmentId` into all data fetches so they only see their own department.
-5. **Create a simple "Unauthorized" page** for forbidden access attempts.
+2. ✅ **Filter sidebar items** — use `useCan` to conditionally render sidebar links per role via `useFilteredMenu()` hook.
+3. ✅ **Add route guards** — `RequireAccess` component redirects to `/unauthorized` if a user navigates to a forbidden tab.
+4. ✅ **Scope Manager data** — `withManagerScope` wrapper auto-injects `departmentId` filter on `getList` for Manager users.
+5. ✅ **Create a simple "Unauthorized" page** for forbidden access attempts.
 
 **Backend dependencies:** None — role is returned in the login response, RBAC is enforced server-side on every API call.
 

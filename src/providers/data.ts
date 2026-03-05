@@ -1,8 +1,10 @@
 import { createSimpleRestDataProvider } from "@refinedev/rest/simple-rest";
+import type { DataProvider } from "@refinedev/core";
 import { API_URL } from "./constants";
 import { clearTokens, getAccessToken, silentRefresh } from "@/lib/api-client";
+import { getStoredUser } from "@/lib/stored-user";
 
-export const { dataProvider, kyInstance } = createSimpleRestDataProvider({
+const { dataProvider: baseProvider, kyInstance } = createSimpleRestDataProvider({
   apiURL: API_URL,
   kyOptions: {
     hooks: {
@@ -39,3 +41,39 @@ export const { dataProvider, kyInstance } = createSimpleRestDataProvider({
     },
   },
 });
+
+export { kyInstance };
+
+/**
+ * Wraps the base data provider to auto-inject the manager's departmentId
+ * as a permanent filter on getList. For non-MANAGER users the wrapper is
+ * a transparent pass-through. Server-side guards remain authoritative.
+ */
+function withManagerScope(provider: DataProvider): DataProvider {
+  return {
+    ...provider,
+
+    getList: (params) => {
+      const user = getStoredUser();
+      if (user?.role === "MANAGER") {
+        if (!user.departmentId) {
+          return Promise.reject(
+            new Error("MANAGER user has no departmentId — cannot fetch unscoped data."),
+          );
+        }
+        const deptFilter = {
+          field: "departmentId",
+          operator: "eq" as const,
+          value: user.departmentId,
+        };
+        return provider.getList({
+          ...params,
+          filters: [...(params.filters ?? []), deptFilter],
+        });
+      }
+      return provider.getList(params);
+    },
+  };
+}
+
+export const dataProvider = withManagerScope(baseProvider);
