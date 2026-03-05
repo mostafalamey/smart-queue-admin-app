@@ -4,8 +4,6 @@ import { ROLE_RESOURCES } from "@/providers/access-control-provider";
 import {
   ChartNoAxesCombined,
   ListStart,
-  Network,
-  Cast,
   Building,
   UsersRound,
 } from "lucide-react";
@@ -29,23 +27,11 @@ const RESOURCE_META: Record<
     icon: ChartNoAxesCombined,
     path: "/analytics",
   },
-  "departments-structure": {
-    label: "Departments Structure",
-    description: "Manage departments, services, and their hierarchy.",
-    icon: Network,
-    path: "/departments-structure",
-  },
-  mapping: {
-    label: "Mapping",
-    description: "Assign counters to services and configure station bindings.",
-    icon: Cast,
-    path: "/mapping",
-  },
   organization: {
     label: "Organization",
-    description: "Configure hospital settings, users, and role assignments.",
+    description: "Manage departments, users, mapping, transfer reasons, and hospital settings.",
     icon: Building,
-    path: "/organization",
+    path: "/organization/metadata",
   },
   "user-experience": {
     label: "User Experience",

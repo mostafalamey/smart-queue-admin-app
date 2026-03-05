@@ -17,16 +17,18 @@ import { authProvider } from "./providers/auth-provider";
 import { accessControlProvider } from "./providers/access-control-provider";
 import QueueControl from "./pages/QueueControl";
 import Analytics from "./pages/Analytics";
-import DepartmentsStructure from "./pages/DepartmentsStructure";
-import Mapping from "./pages/Mapping";
-import Organization from "./pages/Organization";
+import OrgMetadata from "./pages/organization/OrgMetadata";
+import UserManagement from "./pages/organization/UserManagement";
+import DepartmentsStructure from "./pages/organization/DepartmentsStructure";
+import Mapping from "./pages/organization/Mapping";
+import TransferReasons from "./pages/organization/TransferReasons";
 import UserExperience from "./pages/UserExperience";
 import LoginPage from "./pages/login";
 import ChangePasswordPage from "./pages/login/change-password";
 import Unauthorized from "./pages/Unauthorized";
 import Welcome from "./pages/Welcome";
 import { RequireAccess } from "./components/require-access";
-import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react";
+import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound, Users, ArrowLeftRight, Settings } from "lucide-react";
 import { Layout } from "./components/refine-ui/layout/layout";
 import { getStoredUser } from "./lib/stored-user";
 import { Navigate } from "react-router";
@@ -72,7 +74,7 @@ function App() {
                   meta: {
                     label: "Queue Control",
                     icon: <ListStart />,
-                  }
+                  },
                 },
                 {
                   name: "analytics",
@@ -80,40 +82,68 @@ function App() {
                   meta: {
                     label: "Analytics",
                     icon: <ChartNoAxesCombined />,
-                  }
+                  },
                 },
-                  {
-                    name: "departments-structure",
-                    list: "/departments-structure",
-                    meta: {
-                      label: "Departments Structure",
-                      icon: <Network />,
-                    }
+                {
+                  name: "organization",
+                  meta: {
+                    label: "Organization",
+                    icon: <Building />,
                   },
-                  {
-                    name: "mapping",
-                    list: "/mapping",
-                    meta: {
-                      label: "Mapping",
-                      icon: <Cast />,
-                    }
+                },
+                {
+                  name: "org-metadata",
+                  list: "/organization/metadata",
+                  meta: {
+                    label: "Metadata",
+                    icon: <Settings />,
+                    parent: "organization",
                   },
-                  {
-                    name: "organization",
-                    list: "/organization",
-                    meta: {
-                      label: "Organization",
-                      icon: <Building />,
-                    }
+                },
+                {
+                  name: "user-management",
+                  list: "/organization/users",
+                  meta: {
+                    label: "User Management",
+                    icon: <Users />,
+                    parent: "organization",
                   },
-                  {
-                    name: "user-experience",
-                    list: "/user-experience",
-                    meta: {
-                      label: "User Experience",
-                      icon: <UsersRound />,
-                    }
+                },
+                {
+                  name: "departments-structure",
+                  list: "/organization/departments",
+                  meta: {
+                    label: "Departments",
+                    icon: <Network />,
+                    parent: "organization",
                   },
+                },
+                {
+                  name: "mapping",
+                  list: "/organization/mapping",
+                  meta: {
+                    label: "Mapping",
+                    icon: <Cast />,
+                    parent: "organization",
+                  },
+                },
+                {
+                  name: "transfer-reasons",
+                  list: "/organization/transfer-reasons",
+                  meta: {
+                    label: "Transfer Reasons",
+                    icon: <ArrowLeftRight />,
+                    parent: "organization",
+                  },
+                },
+                {
+                  name: "user-experience",
+                  list: "/user-experience",
+                  meta: {
+                    label: "User Experience",
+                    icon: <UsersRound />,
+                  },
+                },
               ]}
             >
               <Routes>
@@ -135,9 +165,11 @@ function App() {
                   <Route path="/" element={<Welcome />} />
                   <Route path="/queue-control" element={<RequireAccess resource="queue-control"><QueueControl /></RequireAccess>} />
                   <Route path="/analytics" element={<RequireAccess resource="analytics"><Analytics /></RequireAccess>} />
-                  <Route path="/departments-structure" element={<RequireAccess resource="departments-structure"><DepartmentsStructure /></RequireAccess>} />
-                  <Route path="/mapping" element={<RequireAccess resource="mapping"><Mapping /></RequireAccess>} />
-                  <Route path="/organization" element={<RequireAccess resource="organization"><Organization /></RequireAccess>} />
+                  <Route path="/organization/metadata" element={<RequireAccess resource="organization"><OrgMetadata /></RequireAccess>} />
+                  <Route path="/organization/users" element={<RequireAccess resource="organization"><UserManagement /></RequireAccess>} />
+                  <Route path="/organization/departments" element={<RequireAccess resource="organization"><DepartmentsStructure /></RequireAccess>} />
+                  <Route path="/organization/mapping" element={<RequireAccess resource="organization"><Mapping /></RequireAccess>} />
+                  <Route path="/organization/transfer-reasons" element={<RequireAccess resource="organization"><TransferReasons /></RequireAccess>} />
                   <Route path="/user-experience" element={<RequireAccess resource="user-experience"><UserExperience /></RequireAccess>} />
                   <Route path="/unauthorized" element={<Unauthorized />} />
                 </Route>

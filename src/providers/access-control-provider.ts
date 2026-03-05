@@ -3,9 +3,12 @@ import { getStoredUser } from "@/lib/stored-user";
 
 /**
  * RBAC rules per the admin-app-spec.md:
- *   Admin   → all 6 tabs
- *   IT      → User Experience + Mapping
+ *   Admin   → all 4 top-level tabs
+ *   IT      → Organization + User Experience
  *   Manager → Queue Control + Analytics
+ *
+ * Organization sub-tabs (Metadata, User Management, Departments Structure,
+ * Mapping, Transfer Reasons) inherit access from the "organization" parent.
  *
  * Resource names must match the `name` field in each Refine resource declaration.
  */
@@ -13,12 +16,10 @@ export const ROLE_RESOURCES: Record<string, readonly string[]> = {
   ADMIN: [
     "queue-control",
     "analytics",
-    "departments-structure",
-    "mapping",
     "organization",
     "user-experience",
   ],
-  IT: ["user-experience", "mapping"],
+  IT: ["organization", "user-experience"],
   MANAGER: ["queue-control", "analytics"],
 };
 

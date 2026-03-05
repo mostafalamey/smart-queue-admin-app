@@ -19,7 +19,7 @@ The admin app has a **production-quality shell** with zero business logic:
 
 | Layer | Status |
 |-------|--------|
-| Routing & resource declaration (6 tabs) | Done |
+| Routing & resource declaration (4 top-level tabs, Organization with 5 sub-tabs) | Done |
 | Sidebar + header + breadcrumb layout | Done |
 | Theme system (light/dark/system) | Done |
 | Notification system (Sonner) | Done |
@@ -31,7 +31,7 @@ The admin app has a **production-quality shell** with zero business logic:
 | **Access control provider (RBAC)** | ✅ Implemented (Phase B) |
 | **WebSocket / realtime integration** | **Not implemented** |
 | **i18n (Arabic/English)** | **Not configured** |
-| **All 6 page bodies** | **Empty stubs** |
+| **All page bodies (8 pages)** | **Empty stubs** |
 
 ### Backend Endpoint Availability
 
@@ -87,9 +87,10 @@ The admin app has a **production-quality shell** with zero business logic:
 
 **Todos:**
 1. ✅ **Create `accessControlProvider`** for Refine implementing the RBAC matrix:
-   - Admin → all 6 tabs
-   - IT → User Experience + Mapping only
+   - Admin → Queue Control, Analytics, Organization (all sub-tabs), User Experience
+   - IT → Organization (all sub-tabs) + User Experience
    - Manager → Queue Control + Analytics only
+   - Organization sub-tabs: Metadata, User Management, Departments, Mapping, Transfer Reasons
    - Block access server-side AND client-side
 2. ✅ **Filter sidebar items** — use `useCan` to conditionally render sidebar links per role via `useFilteredMenu()` hook.
 3. ✅ **Add route guards** — `RequireAccess` component redirects to `/unauthorized` if a user navigates to a forbidden tab.
@@ -136,18 +137,23 @@ The admin app has a **production-quality shell** with zero business logic:
 ---
 
 ### Phase D — Organization Page
-**Goal:** Organization metadata editing and user management CRUD.
+**Goal:** Unified organization management hub — metadata, users, departments, mapping, and transfer reasons.
 
-**Priority:** High — Admin-only, but critical for system setup.
+**Priority:** High — Admin + IT, critical for system setup.
 
-#### D.1 — Organization Metadata
+**Navigation:** Organization appears as a collapsible sidebar item with 5 sub-tabs.
+All sub-tabs are accessible to Admin and IT roles.
+
+**Route:** `/organization/*` (sub-routes: `/metadata`, `/users`, `/departments`, `/mapping`, `/transfer-reasons`)
+
+#### D.1 — Organization Metadata (`/organization/metadata`)
 **Todos:**
 1. **Organization info form** — editable fields: logo, name, address, email, website.
 2. **Logo upload** — call `POST /users/:id/avatar` pattern (or a dedicated org logo endpoint).
    - *Backend dependency:* organization metadata endpoints — **needs backend work**.
 3. **Save/cancel UX** with validation.
 
-#### D.2 — User Management
+#### D.2 — User Management (`/organization/users`)
 **Todos:**
 1. **Users list table** — DataTable with columns: name, email, role, department, status (active/disabled).
    - *Backend dependency:* `GET /admin/users` — **needs backend work**.
@@ -165,92 +171,29 @@ The admin app has a **production-quality shell** with zero business logic:
    - Staff: must assign exactly one department.
    - Admin/IT: no department scope.
 
-#### D.3 — Transfer Reasons Management
+#### D.3 — Departments Structure (`/organization/departments`)
 **Todos:**
-1. **Transfer reasons list** — DataTable with columns: Arabic name, English name, display order, active status.
-   - Uses `GET /admin/transfer-reasons` (exists).
-2. **Create reason form** — Arabic name + English name.
-   - Uses `POST /admin/transfer-reasons` (exists).
-3. **Edit reason** — inline or modal.
-   - Uses `PATCH /admin/transfer-reasons/:id` (exists).
-4. **Deactivate/reactivate toggle** — soft-delete via `DELETE /admin/transfer-reasons/:id` (exists).
-5. **Display order** — editable order field.
-
-**Backend dependencies (new endpoints needed):**
-- `GET /admin/users` — list users
-- `POST /admin/users` — create user
-- `PATCH /admin/users/:id` — update user
-- `POST /admin/users/:id/reset-password` — reset password
-- `POST /users/:id/avatar` — upload avatar
-- Organization metadata CRUD endpoints
-- Transfer reasons endpoints — **all available**
-
-**Branch:** `feature/admin-organization`
-
----
-
-### Phase E — Departments Structure Page
-**Goal:** Node-based tree view for department/service configuration.
-
-**Priority:** High — Admin-only, required for initial system setup.
-
-**Todos:**
-1. **Tree view component** — visual tree layout showing departments as parent nodes and services as child nodes.
-2. **Create department** — form with name (Arabic) + name (English).
+1. **Departments table** — DataTable with columns: name (Arabic), name (English), service count, status.
+   - Uses `GET /departments` (public, exists) for listing.
+2. **Create department** — form/modal with name (Arabic) + name (English).
    - *Backend dependency:* `POST /admin/departments` — **needs backend work**.
-3. **Edit department** — inline or modal editing of department names.
+3. **Edit department** — modal editing of department names.
    - *Backend dependency:* `PATCH /admin/departments/:id` — **needs backend work**.
-4. **Create service** under a department — form with: name (Arabic), name (English), ticket prefix, estimated wait time.
+4. **Deactivate department** — soft-delete with confirmation.
+   - *Backend dependency:* `DELETE /admin/departments/:id` — **needs backend work**.
+5. **Services sub-table** — when a department row is expanded or selected, show a services DataTable below with columns: name (Arabic), name (English), ticket prefix, estimated wait time, status.
+   - Uses `GET /departments/:id/services` (exists) for listing.
+6. **Create service** — form/modal with: name (Arabic), name (English), ticket prefix, estimated wait time.
    - *Backend dependency:* `POST /admin/departments/:id/services` — **needs backend work**.
-5. **Edit service** — update service fields.
+7. **Edit service** — modal editing of service fields.
    - *Backend dependency:* `PATCH /admin/services/:id` — **needs backend work**.
-6. **Visual hierarchy** — collapsible tree nodes, drag-less (no manual reordering per spec).
-7. **Validation rules:**
+8. **Deactivate service** — soft-delete with confirmation.
+   - *Backend dependency:* `DELETE /admin/services/:id` — **needs backend work**.
+9. **Validation rules:**
    - Ticket prefix must be unique across the hospital.
    - Department/service names in both languages required.
 
-**Backend dependencies (new endpoints needed):**
-- `POST /admin/departments` — create department
-- `PATCH /admin/departments/:id` — update department
-- `DELETE /admin/departments/:id` — deactivate department
-- `POST /admin/departments/:id/services` — create service
-- `PATCH /admin/services/:id` — update service
-- `DELETE /admin/services/:id` — deactivate service
-
-**Branch:** `feature/admin-dept-structure`
-
----
-
-### Phase F — User Experience Page
-**Goal:** Manage WhatsApp templates and patient-facing text/content.
-
-**Priority:** Medium — IT + Admin operational config.
-
-#### F.1 — WhatsApp Message Templates
-**Todos:**
-1. **Template list** — grouped by event type, showing Arabic + English versions.
-   - Uses `GET /admin/config/templates` (exists).
-2. **Template editor** — per event type, per language, with variable placeholders preview.
-   - Uses `POST /admin/config/templates` (upsert, exists).
-3. **Event types** — created, called, nearing-turn, completed, transferred, skipped, etc.
-
-#### F.2 — Patient-Facing Text
-**Todos:**
-1. **Kiosk text management** — configurable labels/instructions shown on kiosk screens (Arabic/English).
-   - *Backend dependency:* May need a key-value config endpoint — **needs backend work or reuse templates endpoint**.
-2. **Patient PWA text** — similar configurable content.
-
-**Backend dependencies:** Mostly available. Patient-facing text config may need a new endpoint.
-
-**Branch:** `feature/admin-user-experience`
-
----
-
-### Phase G — Mapping Page
-**Goal:** Device enrollment, counter bindings, and signage zoning.
-
-**Priority:** Medium — IT + Admin hardware configuration.
-
+#### D.4 — Mapping (`/organization/mapping`)
 **Todos:**
 1. **Device registry table** — list all registered devices (kiosks, teller PCs, signage players).
    - *Backend dependency:* `GET /admin/devices` — **needs backend work**.
@@ -265,31 +208,80 @@ The admin app has a **production-quality shell** with zero business logic:
 6. **Signage player zoning** — assign a signage device to a department zone.
    - *Backend dependency:* signage config endpoints — **needs backend work**.
 
-**Backend dependencies (new endpoints needed):**
+#### D.5 — Transfer Reasons (`/organization/transfer-reasons`)
+**Todos:**
+1. **Transfer reasons list** — DataTable with columns: Arabic name, English name, display order, active status.
+   - Uses `GET /admin/transfer-reasons` (exists).
+2. **Create reason form** — Arabic name + English name.
+   - Uses `POST /admin/transfer-reasons` (exists).
+3. **Edit reason** — inline or modal.
+   - Uses `PATCH /admin/transfer-reasons/:id` (exists).
+4. **Deactivate/reactivate toggle** — soft-delete via `DELETE /admin/transfer-reasons/:id` (exists).
+5. **Display order** — editable order field.
+
+**Backend dependencies (new endpoints needed — all sub-tabs combined):**
+- `GET /admin/users` — list users
+- `POST /admin/users` — create user
+- `PATCH /admin/users/:id` — update user
+- `POST /admin/users/:id/reset-password` — reset password
+- `POST /users/:id/avatar` — upload avatar
+- Organization metadata CRUD endpoints
+- `POST /admin/departments` — create department
+- `PATCH /admin/departments/:id` — update department
+- `DELETE /admin/departments/:id` — deactivate department
+- `POST /admin/departments/:id/services` — create service
+- `PATCH /admin/services/:id` — update service
+- `DELETE /admin/services/:id` — deactivate service
 - `GET /admin/devices` — list devices
 - `POST /admin/devices` — register device
 - `PATCH /admin/devices/:id` — update device config
 - `DELETE /admin/devices/:id` — remove device
 - Kiosk remote config endpoints
 - Signage zoning endpoints
+- Transfer reasons endpoints — **all available**
 
-**Branch:** `feature/admin-mapping`
+**Branch:** `feature/admin-organization`
 
 ---
 
-### Phase H — Analytics Page
+### Phase E — User Experience Page
+**Goal:** Manage WhatsApp templates and patient-facing text/content.
+
+**Priority:** Medium — IT + Admin operational config.
+
+#### E.1 — WhatsApp Message Templates
+**Todos:**
+1. **Template list** — grouped by event type, showing Arabic + English versions.
+   - Uses `GET /admin/config/templates` (exists).
+2. **Template editor** — per event type, per language, with variable placeholders preview.
+   - Uses `POST /admin/config/templates` (upsert, exists).
+3. **Event types** — created, called, nearing-turn, completed, transferred, skipped, etc.
+
+#### E.2 — Patient-Facing Text
+**Todos:**
+1. **Kiosk text management** — configurable labels/instructions shown on kiosk screens (Arabic/English).
+   - *Backend dependency:* May need a key-value config endpoint — **needs backend work or reuse templates endpoint**.
+2. **Patient PWA text** — similar configurable content.
+
+**Backend dependencies:** Mostly available. Patient-facing text config may need a new endpoint.
+
+**Branch:** `feature/admin-user-experience`
+
+---
+
+### Phase F — Analytics Page
 **Goal:** Performance KPIs, trends, and predictive insights.
 
 **Priority:** Medium — Admin + Manager operational intelligence.
 
-#### H.1 — KPI Cards
+#### F.1 — KPI Cards
 **Todos:**
 1. **Summary cards** — average wait time, average service time, completion rate, currently waiting, tickets issued today, tickets served, in-progress, no-show rate.
    - *Backend dependency:* `GET /analytics/overview` — **needs backend work**.
 2. **Department filter** (Admin: all, Manager: locked to own).
 3. **Time range filter** (today, 7 days, 30 days, custom).
 
-#### H.2 — Charts & Trends
+#### F.2 — Charts & Trends
 **Todos:**
 1. **Wait time trend chart** — line chart over time (recharts is already installed).
 2. **Department performance comparison** — bar chart.
@@ -298,7 +290,7 @@ The admin app has a **production-quality shell** with zero business logic:
 5. **Throughput analysis** — completion rate, tickets/hour, estimated clear time.
    - *Backend dependency:* `GET /analytics/trends`, `GET /analytics/throughput` — **needs backend work**.
 
-#### H.3 — Predictive Insights (Future)
+#### F.3 — Predictive Insights (Future)
 **Todos:**
 1. **Wait time estimation widget** — with confidence indicator.
 2. **Peak hours prediction** — based on historical patterns.
@@ -317,7 +309,7 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ---
 
-### Phase I — Internationalization (i18n)
+### Phase G — Internationalization (i18n)
 **Goal:** Full Arabic + English support throughout the admin app.
 
 **Priority:** Medium — required before production deployment.
@@ -336,7 +328,7 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ---
 
-### Phase J — WebSocket Integration & Live Updates
+### Phase H — WebSocket Integration & Live Updates
 **Goal:** Real-time queue updates across the admin app.
 
 **Priority:** Medium — enhances Queue Control and Analytics.
@@ -355,7 +347,7 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ---
 
-### Phase K — Polish, Testing & Production Readiness
+### Phase I — Polish, Testing & Production Readiness
 **Goal:** Final quality pass before deployment.
 
 **Priority:** Final phase.
@@ -379,42 +371,38 @@ The admin app has a **production-quality shell** with zero business logic:
 ## Phase Dependency Graph
 
 ```text
-Phase A (Auth) ──────────────────────────────┐
-    │                                         │
-    ▼                                         │
-Phase B (RBAC) ──────────────────────────┐    │
+Phase A (Auth) ────────────────────────────────┐
+    │                                          │
+    ▼                                          │
+Phase B (RBAC) ───────────────────────────┐    │
     │                                     │    │
     ├──► Phase C (Queue Control)          │    │
     ├──► Phase D (Organization)           │    │
-    ├──► Phase E (Dept Structure)         │    │
-    ├──► Phase F (User Experience)        │    │
-    ├──► Phase G (Mapping)                │    │
-    └──► Phase H (Analytics)              │    │
+    ├──► Phase E (User Experience)        │    │
+    └──► Phase F (Analytics)              │    │
                                           │    │
-Phase I (i18n) ◄──── can start anytime ──►│    │
-Phase J (Realtime) ◄── after Phase C ────►│    │
+Phase G (i18n) ◄──── can start anytime ──►│    │
+Phase H (Realtime) ◄── after Phase C ────►│    │
                                           │    │
                                           ▼    ▼
-                                    Phase K (Polish)
+                                    Phase I (Polish)
 ```
 
 **Critical path:** A → B → C (Queue Control is the first user-facing deliverable after auth).
 
-Phases C through H can be developed **in parallel** once B is complete, subject to backend endpoint availability. Recommended sequencing by backend readiness:
+Phases C through F can be developed **in parallel** once B is complete, subject to backend endpoint availability. Recommended sequencing by backend readiness:
 
 | Order | Phase | Backend Ready? |
 |-------|-------|----------------|
 | 1 | A — Auth | Yes |
 | 2 | B — RBAC | Yes |
 | 3 | C — Queue Control | Partially (need ticket lookup + lock) |
-| 4 | D — Organization | Partially (transfer reasons ready; user mgmt + org metadata need backend work) |
-| 5 | E — Dept Structure | Needs CRUD endpoints |
-| 6 | F — User Experience | Needs patient text config endpoint |
-| 7 | G — Mapping | Needs device registry endpoints |
-| 8 | H — Analytics | Needs analytics endpoints |
-| 9 | I — i18n | Independent |
-| 10 | J — Realtime | Independent (after C) |
-| 11 | K — Polish | Last |
+| 4 | D — Organization | Partially (transfer reasons ready; user mgmt, dept CRUD, mapping, org metadata need backend work) |
+| 5 | E — User Experience | Needs patient text config endpoint |
+| 6 | F — Analytics | Needs analytics endpoints |
+| 7 | G — i18n | Independent |
+| 8 | H — Realtime | Independent (after C) |
+| 9 | I — Polish | Last |
 
 ---
 
@@ -438,15 +426,13 @@ This allows UI development to proceed **without blocking on backend delivery**.
 | A — Auth | 2–3 days | None |
 | B — RBAC | 1–2 days | None |
 | C — Queue Control | 3–5 days | Ticket lookup + lock endpoints |
-| D — Organization | 4–6 days | User CRUD + org metadata endpoints |
-| E — Dept Structure | 3–4 days | Dept/service CRUD endpoints |
-| F — User Experience | 2–3 days | Minimal (patient text config) |
-| G — Mapping | 3–4 days | Device registry endpoints |
-| H — Analytics | 4–6 days | Analytics endpoints |
-| I — i18n | 2–3 days | None |
-| J — Realtime | 2–3 days | None |
-| K — Polish | 3–5 days | None |
-| **Total** | **~29–44 days** | |
+| D — Organization (5 sub-tabs) | 8–12 days | User CRUD, org metadata, dept/service CRUD, device registry endpoints |
+| E — User Experience | 2–3 days | Minimal (patient text config) |
+| F — Analytics | 4–6 days | Analytics endpoints |
+| G — i18n | 2–3 days | None |
+| H — Realtime | 2–3 days | None |
+| I — Polish | 3–5 days | None |
+| **Total** | **~27–42 days** | |
 
 ---
 
@@ -460,48 +446,27 @@ src/
 │   ├── data.ts                   ← existing (enhance with mock switching)
 │   ├── mock-data-provider.ts     ← mock provider for offline dev
 │   ├── constants.ts              ← existing
-│   ├── i18n-provider.ts          ← Phase I
-│   └── realtime-provider.ts      ← Phase J
+│   ├── i18n-provider.ts          ← Phase G
+│   └── realtime-provider.ts      ← Phase H
 ├── hooks/
 │   ├── use-mobile.ts             ← existing
-│   ├── use-socket.ts             ← Phase J
+│   ├── use-socket.ts             ← Phase H
 │   └── use-current-user.ts       ← Phase A/B
 ├── pages/
 │   ├── login/
 │   │   ├── index.tsx             ← Phase A
 │   │   └── change-password.tsx   ← Phase A
-│   ├── queue-control/
-│   │   ├── index.tsx             ← Phase C
-│   │   ├── queue-status.tsx
-│   │   ├── waiting-list.tsx
-│   │   ├── ticket-detail.tsx
-│   │   └── priority-change.tsx
-│   ├── analytics/
-│   │   ├── index.tsx             ← Phase H
-│   │   ├── kpi-cards.tsx
-│   │   ├── charts/
-│   │   └── predictive/
-│   ├── departments-structure/
-│   │   ├── index.tsx             ← Phase E
-│   │   └── tree-view.tsx
-│   ├── organization/
-│   │   ├── index.tsx             ← Phase D
-│   │   ├── org-metadata.tsx
-│   │   ├── transfer-reasons.tsx
-│   │   └── user-management/
-│   │       ├── user-list.tsx
-│   │       ├── user-form.tsx
-│   │       └── password-reset.tsx
-│   ├── user-experience/
-│   │   ├── index.tsx             ← Phase F
-│   │   ├── whatsapp-templates.tsx
-│   │   └── patient-text.tsx
-│   └── mapping/
-│       ├── index.tsx             ← Phase G
-│       ├── device-registry.tsx
-│       ├── counter-binding.tsx
-│       ├── kiosk-config.tsx
-│       └── signage-zoning.tsx
+│   ├── QueueControl.tsx          ← Phase C
+│   ├── Analytics.tsx             ← Phase F
+│   ├── UserExperience.tsx        ← Phase E
+│   ├── Welcome.tsx               ← existing
+│   ├── Unauthorized.tsx          ← existing
+│   └── organization/
+│       ├── OrgMetadata.tsx       ← Phase D.1
+│       ├── UserManagement.tsx    ← Phase D.2
+│       ├── DepartmentsStructure.tsx ← Phase D.3
+│       ├── Mapping.tsx           ← Phase D.4
+│       └── TransferReasons.tsx   ← Phase D.5
 └── lib/
     ├── utils.ts                  ← existing
     ├── api-client.ts             ← Phase A (axios/fetch wrapper with token refresh)
