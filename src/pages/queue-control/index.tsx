@@ -41,7 +41,7 @@ export default function QueueControl() {
     useQueueData(serviceId);
 
   const handleDepartmentChange = (id: string) => {
-    setDepartmentId(id);
+    setDepartmentId(id || null);
     setServiceId(null);
   };
 
@@ -100,7 +100,7 @@ export default function QueueControl() {
             <Skeleton className="h-9 w-full rounded-md" />
           ) : (
             <Select
-              value={departmentId ?? undefined}
+              value={departmentId ?? ""}
               onValueChange={handleDepartmentChange}
               disabled={isManager}
             >
@@ -130,8 +130,8 @@ export default function QueueControl() {
             <Skeleton className="h-9 w-full rounded-md" />
           ) : (
             <Select
-              value={serviceId ?? undefined}
-              onValueChange={setServiceId}
+              value={serviceId ?? ""}
+              onValueChange={(id) => setServiceId(id || null)}
               disabled={!departmentId || services.length === 0}
             >
               <SelectTrigger>
