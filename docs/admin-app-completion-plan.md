@@ -25,7 +25,7 @@ The admin app has a **production-quality shell** with zero business logic:
 | Notification system (Sonner) | Done |
 | 46 shadcn/ui primitives | Done |
 | Refine CRUD primitives (DataTable, buttons, views) | Done |
-| REST data provider (`@refinedev/rest`) | Configured, in use (Queue Control) |
+| REST data provider (`@refinedev/rest`) | Configured; Queue Control uses `apiJson`/`apiFetch` directly |
 | Auth forms (login, change-password) | ✅ Implemented (Phase A) |
 | **Auth provider (Refine `authProvider`)** | ✅ Implemented (Phase A) |
 | **Access control provider (RBAC)** | ✅ Implemented (Phase B) |

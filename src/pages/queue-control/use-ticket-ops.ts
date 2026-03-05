@@ -1,10 +1,23 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { apiJson, apiFetch } from "@/lib/api-client";
 import type {
   TicketSearchResult,
   TicketDetail,
   PriorityCategory,
 } from "./types";
+
+/* ── Helpers ────────────────────────────────────────────────────────────── */
+
+/** Extract a human-readable message from the ApiError shape thrown by apiJson. */
+function extractErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    if (typeof e.message === "string" && e.message) return e.message;
+    if (typeof e.error === "string" && e.error) return e.error;
+  }
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
 
 /* ── Ticket search ──────────────────────────────────────────────────────── */
 
@@ -15,6 +28,7 @@ interface SearchResponse {
 export function useTicketSearch() {
   const [results, setResults] = useState<TicketSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const seqRef = useRef(0);
 
   const search = useCallback(async (q: string, serviceId?: string) => {
     if (q.trim().length < 2) {
@@ -22,6 +36,7 @@ export function useTicketSearch() {
       return;
     }
 
+    const id = ++seqRef.current;
     setLoading(true);
     try {
       const params = new URLSearchParams({ q: q.trim() });
@@ -29,11 +44,14 @@ export function useTicketSearch() {
       const data = await apiJson<SearchResponse>(
         `/admin/tickets/search?${params.toString()}`
       );
-      setResults(data.tickets);
-    } catch {
-      setResults([]);
+      if (id === seqRef.current) setResults(data.tickets);
+    } catch (err: unknown) {
+      if (id === seqRef.current) {
+        console.warn("[ticket-search]", extractErrorMessage(err, "Search failed"));
+        setResults([]);
+      }
     } finally {
-      setLoading(false);
+      if (id === seqRef.current) setLoading(false);
     }
   }, []);
 
@@ -52,19 +70,23 @@ export function useTicketDetail() {
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const seqRef = useRef(0);
 
   const fetch = useCallback(async (ticketId: string) => {
+    const id = ++seqRef.current;
     setLoading(true);
     setError(null);
     try {
       const data = await apiJson<DetailResponse>(
         `/admin/tickets/${encodeURIComponent(ticketId)}`
       );
-      setTicket(data.ticket);
+      if (id === seqRef.current) setTicket(data.ticket);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load ticket");
+      if (id === seqRef.current) {
+        setError(extractErrorMessage(err, "Failed to load ticket"));
+      }
     } finally {
-      setLoading(false);
+      if (id === seqRef.current) setLoading(false);
     }
   }, []);
 

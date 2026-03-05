@@ -73,6 +73,7 @@ export interface TicketEvent {
   id: string;
   eventType: string;
   actorType: string;
+  actorName: string | null;
   actorUserId: string | null;
   stationId: string | null;
   payload: Record<string, unknown> | null;

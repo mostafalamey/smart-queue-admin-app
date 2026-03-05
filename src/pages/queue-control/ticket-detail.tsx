@@ -72,7 +72,7 @@ function EventRow({ event }: { event: TicketEvent }) {
             {event.eventType.replace(/_/g, " ")}
           </span>
           <span className="text-[10px] text-muted-foreground">
-            {event.actorType}
+            {event.actorName ?? event.actorType}
           </span>
         </div>
         <span className="text-[10px] tabular-nums text-muted-foreground">

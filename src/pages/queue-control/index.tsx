@@ -159,7 +159,7 @@ export default function QueueControl() {
           <Button
             variant="outline"
             size="icon"
-            onClick={refetch}
+            onClick={() => refetch()}
             disabled={queueLoading}
             aria-label="Refresh queue data"
             className="shrink-0"

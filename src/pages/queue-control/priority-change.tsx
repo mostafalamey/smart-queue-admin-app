@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,9 @@ export function PriorityChangeDialog({ ticket, open, onClose, onSuccess }: Props
   const [locked, setLocked] = useState(false);
   const [selected, setSelected] = useState<PriorityCategory | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Tracks the id of the ticket we actually hold a lock on (avoids stale
+  // closure in the effect cleanup reading the `locked` boolean).
+  const lockedTicketIdRef = useRef<string | null>(null);
 
   // Fetch categories + acquire lock when dialog opens
   useEffect(() => {
@@ -39,7 +42,10 @@ export function PriorityChangeDialog({ ticket, open, onClose, onSuccess }: Props
       fetchCategories();
 
       lock(ticket.id)
-        .then(() => setLocked(true))
+        .then(() => {
+          lockedTicketIdRef.current = ticket.id;
+          setLocked(true);
+        })
         .catch((err) => {
           setError(err instanceof Error ? err.message : "Failed to lock ticket");
         });
@@ -47,18 +53,22 @@ export function PriorityChangeDialog({ ticket, open, onClose, onSuccess }: Props
 
     // Cleanup: release lock on close
     return () => {
-      if (ticket && locked) {
-        unlock(ticket.id).catch(() => {});
+      const lockedId = lockedTicketIdRef.current;
+      if (lockedId) {
+        lockedTicketIdRef.current = null;
+        unlock(lockedId).catch(() => {});
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, ticket?.id]);
+  }, [open, ticket?.id, fetchCategories, lock, unlock]);
 
   const handleSubmit = async () => {
     if (!ticket || !selected) return;
     setError(null);
     try {
       await change(ticket.id, selected.id, selected.weight);
+      // Lock was atomically released by the server during change-priority;
+      // clear the ref so the effect cleanup does not fire a redundant unlock.
+      lockedTicketIdRef.current = null;
       toast.success(`Priority changed to ${selected.nameEn}`);
       onSuccess();
     } catch (err) {
@@ -67,8 +77,10 @@ export function PriorityChangeDialog({ ticket, open, onClose, onSuccess }: Props
   };
 
   const handleClose = () => {
-    if (ticket && locked) {
-      unlock(ticket.id).catch(() => {});
+    const lockedId = lockedTicketIdRef.current;
+    if (lockedId) {
+      lockedTicketIdRef.current = null;
+      unlock(lockedId).catch(() => {});
     }
     setLocked(false);
     onClose();

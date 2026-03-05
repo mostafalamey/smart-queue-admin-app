@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, X } from "lucide-react";
 import { useTicketSearch } from "./use-ticket-ops";
@@ -60,7 +59,7 @@ export function TicketSearch({ serviceId, onSelectTicket }: Props) {
   const [open, setOpen] = useState(false);
   const { results, loading, search, clear } = useTicketSearch();
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Debounced search
   useEffect(() => {

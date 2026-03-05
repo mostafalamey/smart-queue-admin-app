@@ -72,6 +72,14 @@ export function WaitingList({ tickets, loading, onSelectTicket }: Props) {
                   key={ticket.id}
                   className={onSelectTicket ? "cursor-pointer hover:bg-accent/50" : ""}
                   onClick={() => onSelectTicket?.(ticket.id)}
+                  role={onSelectTicket ? "button" : undefined}
+                  tabIndex={onSelectTicket ? 0 : undefined}
+                  onKeyDown={onSelectTicket ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectTicket(ticket.id);
+                    }
+                  } : undefined}
                 >
                   <TableCell className="tabular-nums text-muted-foreground">
                     {idx + 1}

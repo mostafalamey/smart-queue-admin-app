@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { apiJson } from "@/lib/api-client";
 import type {
   Department,
@@ -42,6 +42,7 @@ export function useServices(departmentId: string | null) {
   useEffect(() => {
     if (!departmentId) {
       setServices([]);
+      setLoading(false);
       return;
     }
 
@@ -76,39 +77,54 @@ export function useQueueData(serviceId: string | null) {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // True once we have received a successful response for the current serviceId;
+  // background polls skip setLoading(true) to avoid re-showing skeletons.
+  const hasDataRef = useRef(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
     if (!serviceId) {
       setSummary(null);
       setWaitingList(null);
       return;
     }
 
-    setLoading(true);
+    // Only show the loading skeleton on the initial fetch, not on polls.
+    if (!hasDataRef.current) setLoading(true);
     setError(null);
 
     try {
       const enc = encodeURIComponent(serviceId);
       const [s, w] = await Promise.all([
-        apiJson<QueueSummary>(`/queue/services/${enc}/summary`),
-        apiJson<WaitingListResponse>(`/queue/services/${enc}/waiting`),
+        apiJson<QueueSummary>(`/queue/services/${enc}/summary`, { signal }),
+        apiJson<WaitingListResponse>(`/queue/services/${enc}/waiting`, { signal }),
       ]);
       setSummary(s);
       setWaitingList(w);
+      hasDataRef.current = true;
     } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      const e = err as Record<string, unknown>;
       const msg =
-        err instanceof Error ? err.message : "Failed to load queue data";
+        (typeof e?.message === "string" && e.message) ||
+        (typeof e?.error === "string" && e.error) ||
+        (err instanceof Error ? err.message : "Failed to load queue data");
       setError(msg);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [serviceId]);
 
   useEffect(() => {
-    fetchData();
-    if (!serviceId) return;
-    const id = setInterval(fetchData, POLL_MS);
-    return () => clearInterval(id);
+    // Reset so the first fetch for this serviceId always shows the skeleton.
+    hasDataRef.current = false;
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    if (!serviceId) return () => controller.abort();
+    const id = setInterval(() => fetchData(controller.signal), POLL_MS);
+    return () => {
+      controller.abort();
+      clearInterval(id);
+    };
   }, [fetchData, serviceId]);
 
   return { summary, waitingList, loading, error, refetch: fetchData };
