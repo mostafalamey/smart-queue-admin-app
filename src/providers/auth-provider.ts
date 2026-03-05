@@ -195,7 +195,7 @@ export const authProvider: AuthProvider = {
 
     return {
       id: user.id,
-      name: user.email,
+      name: user.name || user.email,
       email: user.email,
       role: user.role,
       departmentId: user.departmentId,

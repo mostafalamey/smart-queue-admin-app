@@ -43,6 +43,7 @@ export function clearTokens() {
 export interface AuthUser {
   id: string;
   email: string;
+  name?: string | null;
   role: "ADMIN" | "IT" | "MANAGER" | "STAFF";
   departmentId?: string;
   mustChangePassword: boolean;

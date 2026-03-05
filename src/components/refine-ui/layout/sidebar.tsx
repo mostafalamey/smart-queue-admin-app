@@ -25,14 +25,33 @@ import {
   useLink,
   useMenu,
   useRefineOptions,
+  useCan,
   type TreeMenuItem,
 } from "@refinedev/core";
 import { ChevronRight, ListIcon } from "lucide-react";
 import React from "react";
 
+/**
+ * Filter menu items by access control. Runs useCan for each resource
+ * and returns only the items the current user is allowed to see.
+ */
+function useFilteredMenu() {
+  const { menuItems, selectedKey } = useMenu();
+
+  // Pre-check access for every top-level resource
+  const checks = menuItems.map((item) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useCan({ resource: item.name, action: "list" })
+  );
+
+  const filtered = menuItems.filter((_, i) => checks[i].data?.can !== false);
+
+  return { menuItems: filtered, selectedKey };
+}
+
 export function Sidebar() {
   const { open } = useShadcnSidebar();
-  const { menuItems, selectedKey } = useMenu();
+  const { menuItems, selectedKey } = useFilteredMenu();
 
   return (
     <ShadcnSidebar collapsible="icon" className={cn("border-none")}>

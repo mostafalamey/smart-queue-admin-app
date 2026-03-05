@@ -3,6 +3,7 @@ import { useGetIdentity, useLogout, useNotification } from "@refinedev/core";
 import { useNavigate } from "react-router";
 import { InputPassword } from "@/components/refine-ui/form/input-password";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { apiJson } from "@/lib/api-client";
@@ -24,6 +25,7 @@ export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +34,7 @@ export default function ChangePasswordPage() {
   const { mutate: logout } = useLogout();
   const { data: identity } = useGetIdentity<{
     id: string;
+    name: string;
     email: string;
     role: string;
     departmentId?: string;
@@ -64,15 +67,20 @@ export default function ChangePasswordPage() {
     try {
       await apiJson<{ success: boolean }>("/auth/change-password", {
         method: "POST",
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          ...(displayName.trim() && { name: displayName.trim() }),
+        }),
       });
 
-      // Update stored user to clear mustChangePassword
+      // Update stored user to clear mustChangePassword and set name
       const source = identity ?? getStoredUser();
       if (source) {
         setStoredUser({
           id: source.id,
           email: source.email,
+          name: displayName.trim() || source.name || undefined,
           role: source.role as StoredUser["role"],
           departmentId: source.departmentId,
           mustChangePassword: false,
@@ -161,13 +169,29 @@ export default function ChangePasswordPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
+              <Label htmlFor="display-name">Display Name</Label>
+              <Input
+                id="display-name"
+                type="text"
+                placeholder="e.g. Dr. Sarah Ahmed"
+                autoComplete="name"
+                autoFocus
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={loading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional — shown in the app header instead of your email.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="current-password">Current Password</Label>
               <InputPassword
                 id="current-password"
                 placeholder="••••••••••••"
                 required
                 autoComplete="current-password"
-                autoFocus
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 disabled={loading}

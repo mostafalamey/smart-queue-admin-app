@@ -14,6 +14,7 @@ import { useNotificationProvider } from "./components/refine-ui/notification/use
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
 import { dataProvider } from "./providers/data";
 import { authProvider } from "./providers/auth-provider";
+import { accessControlProvider } from "./providers/access-control-provider";
 import QueueControl from "./pages/QueueControl";
 import Analytics from "./pages/Analytics";
 import DepartmentsStructure from "./pages/DepartmentsStructure";
@@ -22,6 +23,8 @@ import Organization from "./pages/Organization";
 import UserExperience from "./pages/UserExperience";
 import LoginPage from "./pages/login";
 import ChangePasswordPage from "./pages/login/change-password";
+import Unauthorized from "./pages/Unauthorized";
+import { RequireAccess } from "./components/require-access";
 import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound } from "lucide-react";
 import { Layout } from "./components/refine-ui/layout/layout";
 import { getStoredUser } from "./lib/stored-user";
@@ -48,6 +51,7 @@ function App() {
             <Refine
               dataProvider={dataProvider}
               authProvider={authProvider}
+              accessControlProvider={accessControlProvider}
               notificationProvider={useNotificationProvider()}
               routerProvider={routerProvider}
               options={{
@@ -127,12 +131,13 @@ function App() {
                     </Authenticated>
                   }
                 >
-                  <Route path="/" element={<QueueControl />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/departments-structure" element={<DepartmentsStructure />} />
-                  <Route path="/mapping" element={<Mapping />} />
-                  <Route path="/organization" element={<Organization />} />
-                  <Route path="/user-experience" element={<UserExperience />} />
+                  <Route path="/" element={<RequireAccess resource="queue-control"><QueueControl /></RequireAccess>} />
+                  <Route path="/analytics" element={<RequireAccess resource="analytics"><Analytics /></RequireAccess>} />
+                  <Route path="/departments-structure" element={<RequireAccess resource="departments-structure"><DepartmentsStructure /></RequireAccess>} />
+                  <Route path="/mapping" element={<RequireAccess resource="mapping"><Mapping /></RequireAccess>} />
+                  <Route path="/organization" element={<RequireAccess resource="organization"><Organization /></RequireAccess>} />
+                  <Route path="/user-experience" element={<RequireAccess resource="user-experience"><UserExperience /></RequireAccess>} />
+                  <Route path="/unauthorized" element={<Unauthorized />} />
                 </Route>
 
                 {/* Auth routes — only accessible when NOT authenticated */}
