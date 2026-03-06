@@ -5,18 +5,17 @@ import {
   Pencil,
   Trash2,
   ChevronRight,
-  ChevronDown,
   Building2,
   Layers,
+  Clock,
   RefreshCw,
   AlertCircle,
-  ToggleLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -37,14 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import {
   useDepartments,
   type Department,
@@ -304,123 +296,276 @@ function ServiceFormDialog({ open, editTarget, onClose, onSave }: ServiceFormDia
   );
 }
 
-/* ── Services sub-table ─────────────────────────────────────────────────── */
+/* ── Services Panel ─────────────────────────────────────────────────────── */
 
-interface ServicesTableProps {
+interface ServicesPanelProps {
   department: Department;
   onEditService: (s: Service) => void;
   onToggleService: (s: Service) => void;
   togglingServiceId: string | null;
   deactivatingServiceId: string | null;
   onAddService: () => void;
-  onDeactivateService: (s: Service) => void;
+  onDeleteService: (s: Service) => void;
 }
 
-function ServicesTable({
+function ServicesPanel({
   department,
   onEditService,
   onToggleService,
   togglingServiceId,
   deactivatingServiceId,
   onAddService,
-  onDeactivateService,
-}: ServicesTableProps) {
+  onDeleteService,
+}: ServicesPanelProps) {
   return (
-    <div className="ml-8 mt-2 mb-3 rounded-md border border-dashed border-border/60 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 bg-muted/30">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Services ({department.services.length})
+    <div className="mx-5 mb-5 overflow-hidden rounded-xl border border-white/[0.05] bg-black/20">
+      <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-3">
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50">
+          Services &middot; {department.services.length}
         </span>
-        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onAddService}>
+        <button
+          onClick={onAddService}
+          className="flex items-center gap-1.5 text-[11px] font-semibold text-primary transition-colors hover:text-primary/70"
+        >
           <Plus className="h-3 w-3" />
           Add Service
-        </Button>
+        </button>
       </div>
+
       {department.services.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4">No services yet</p>
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground/30">
+          <Layers className="h-6 w-6" />
+          <span className="text-xs">No services yet</span>
+        </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/20 hover:bg-muted/20">
-              <TableHead className="text-xs">Name</TableHead>
-              <TableHead className="text-xs">Prefix</TableHead>
-              <TableHead className="text-xs">Est. Wait</TableHead>
-              <TableHead className="text-xs">Daily Reset</TableHead>
-              <TableHead className="text-xs">Active</TableHead>
-              <TableHead className="text-right pr-4 text-xs">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {department.services.map((s) => (
-              <TableRow key={s.id} className="group">
-                <TableCell>
-                  <div className="text-sm font-medium">{s.nameEn}</div>
-                  <div className="text-xs text-muted-foreground" dir="rtl">{s.nameAr}</div>
-                </TableCell>
-                <TableCell>
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{s.ticketPrefix}</code>
-                </TableCell>
-                <TableCell className="text-sm">{s.estimatedWaitMinutes} min</TableCell>
-                <TableCell>
-                  {s.dailyResetEnabled ? (
-                    <Badge variant="outline" className="text-xs text-green-600 border-green-300 bg-green-50">On</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs">Off</Badge>
+        <div className="divide-y divide-white/[0.04]">
+          {department.services.map((s) => (
+            <div
+              key={s.id}
+              className={cn(
+                "group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]",
+                !s.isActive && "opacity-40"
+              )}
+            >
+              <div className="flex h-9 w-12 shrink-0 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-400/10">
+                <span className="font-mono text-[11px] font-bold tracking-wider text-amber-400">
+                  {s.ticketPrefix}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1 flex items-baseline gap-2">
+                <p className="text-sm font-semibold shrink-0 leading-tight">{s.nameEn}</p>
+                <span className="text-muted-foreground/20 text-xs shrink-0">/</span>
+                <p className="text-sm text-muted-foreground/60 truncate" dir="rtl">
+                  {s.nameAr}
+                </p>
+              </div>
+              <div className="hidden shrink-0 items-center gap-2.5 md:flex">
+                <span className="flex items-center gap-1 text-[11px] text-muted-foreground/50">
+                  <Clock className="h-3 w-3" />
+                  {s.estimatedWaitMinutes}m
+                </span>
+                <span
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                    s.dailyResetEnabled
+                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                      : "border-white/[0.05] bg-white/[0.02] text-muted-foreground/30"
                   )}
-                </TableCell>
-                <TableCell>
-                  <Switch
-                    checked={s.isActive}
-                    disabled={togglingServiceId === s.id}
-                    onCheckedChange={() => onToggleService(s)}
-                    aria-label={s.isActive ? "Deactivate service" : "Activate service"}
-                  />
-                </TableCell>
-                <TableCell className="text-right pr-4">
-                  <div className="flex items-center justify-end gap-1">
+                >
+                  {s.dailyResetEnabled ? "Daily" : "Off"}
+                </span>
+              </div>
+              <Switch
+                checked={s.isActive}
+                disabled={togglingServiceId === s.id}
+                onCheckedChange={() => onToggleService(s)}
+                aria-label={s.isActive ? "Deactivate service" : "Activate service"}
+                className="shrink-0"
+              />
+              <div className="flex shrink-0 items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground/40 hover:text-foreground"
+                  onClick={() => onEditService(s)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      onClick={() => onEditService(s)}
+                      className="h-7 w-7 text-red-400/40 hover:text-red-400"
+                      disabled={deactivatingServiceId === s.id || togglingServiceId === s.id}
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
-                          disabled={deactivatingServiceId === s.id || togglingServiceId === s.id}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Service</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Permanently delete &ldquo;{s.nameEn}&rdquo;? This cannot be undone. If this service has existing tickets, use the toggle to deactivate it instead.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={() => onDeactivateService(s)}
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Service</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Permanently delete &ldquo;{s.nameEn}&rdquo;? This cannot be undone. If this
+                        service has existing tickets, use the toggle to deactivate it instead.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => onDeleteService(s)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Department Card ────────────────────────────────────────────────────── */
+
+interface DepartmentCardProps {
+  dept: Department;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onToggleActive: () => void;
+  onDelete: () => void;
+  togglingDeptId: string | null;
+  deactivatingDeptId: string | null;
+  onEditService: (s: Service) => void;
+  onToggleService: (s: Service) => void;
+  togglingServiceId: string | null;
+  deactivatingServiceId: string | null;
+  onAddService: () => void;
+  onDeleteService: (s: Service) => void;
+}
+
+function DepartmentCard({
+  dept,
+  expanded,
+  onToggleExpand,
+  onEdit,
+  onToggleActive,
+  onDelete,
+  togglingDeptId,
+  deactivatingDeptId,
+  onEditService,
+  onToggleService,
+  togglingServiceId,
+  deactivatingServiceId,
+  onAddService,
+  onDeleteService,
+}: DepartmentCardProps) {
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border transition-all duration-200",
+        dept.isActive
+          ? "border-white/[0.08] bg-card"
+          : "border-white/[0.04] bg-card/60 opacity-60"
+      )}
+    >
+      <div
+        className="flex cursor-pointer select-none items-center gap-4 px-5 py-4"
+        onClick={onToggleExpand}
+      >
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground/30 transition-transform duration-200",
+            expanded && "rotate-90 text-primary/60"
+          )}
+        />
+        <div
+          className={cn(
+            "h-9 w-0.5 shrink-0 rounded-full transition-colors duration-200",
+            dept.isActive ? "bg-primary/50" : "bg-muted/20"
+          )}
+        />
+        <div className="min-w-0 flex-1 flex items-baseline gap-2">
+          <p className="text-sm font-bold shrink-0 leading-tight">{dept.nameEn}</p>
+          <span className="text-muted-foreground/20 text-xs shrink-0">/</span>
+          <p className="text-sm text-muted-foreground/60 truncate" dir="rtl">
+            {dept.nameAr}
+          </p>
+        </div>
+        <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1 sm:flex">
+          <Layers className="h-3 w-3 text-muted-foreground/30" />
+          <span className="text-[11px] font-medium text-muted-foreground/50">
+            {dept.services.length} {dept.services.length === 1 ? "service" : "services"}
+          </span>
+        </div>
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={dept.isActive}
+            disabled={togglingDeptId === dept.id}
+            onCheckedChange={onToggleActive}
+            aria-label={dept.isActive ? "Deactivate department" : "Activate department"}
+          />
+        </div>
+        <div
+          className="flex shrink-0 items-center gap-0.5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground/40 hover:text-foreground"
+            onClick={onEdit}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                disabled={deactivatingDeptId === dept.id || togglingDeptId === dept.id}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Department</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Permanently delete &ldquo;{dept.nameEn}&rdquo; and all its services? This cannot
+                  be undone. If this department has existing tickets, use the toggle to deactivate
+                  it instead.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={onDelete}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+      {expanded && (
+        <ServicesPanel
+          department={dept}
+          onEditService={onEditService}
+          onToggleService={onToggleService}
+          togglingServiceId={togglingServiceId}
+          deactivatingServiceId={deactivatingServiceId}
+          onAddService={onAddService}
+          onDeleteService={onDeleteService}
+        />
       )}
     </div>
   );
@@ -574,23 +719,24 @@ export default function DepartmentsStructure() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Building2 className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">Departments & Services</h1>
-            <p className="text-sm text-muted-foreground">
-              Manage department structure and their queuing services
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Departments & Services</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground/60">
+            Manage department structure and their queuing services
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => void fetch()}>
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Refresh
           </Button>
-          <Button size="sm" onClick={() => { setEditDept(null); setDeptFormOpen(true); }}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditDept(null);
+              setDeptFormOpen(true);
+            }}
+          >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Add Department
           </Button>
@@ -599,143 +745,76 @@ export default function DepartmentsStructure() {
 
       {/* Error state */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-lg border border-red-200 bg-red-50 text-red-700">
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-red-400">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          <span className="text-sm flex-1">{error}</span>
-          <Button variant="outline" size="sm" onClick={() => void fetch()}>Retry</Button>
+          <span className="flex-1 text-sm">{error}</span>
+          <Button variant="outline" size="sm" onClick={() => void fetch()}>
+            Retry
+          </Button>
         </div>
       )}
 
-      {/* Departments list */}
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/40">
-              <TableHead className="w-8"></TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Services</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead className="text-right pr-4">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                  </TableRow>
-                ))
-              : departments.length === 0 && !error
-              ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                      <Building2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                      No departments yet
-                    </TableCell>
-                  </TableRow>
-                )
-              : departments.map((dept) => {
-                  const expanded = expandedIds.has(dept.id);
-                  return (
-                    <>
-                      <TableRow
-                        key={dept.id}
-                        className="cursor-pointer group"
-                        onClick={() => toggleExpand(dept.id)}
-                      >
-                        <TableCell className="w-8">
-                          {expanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium text-sm">{dept.nameEn}</div>
-                          <div className="text-xs text-muted-foreground" dir="rtl">{dept.nameAr}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {dept.services.length} service{dept.services.length !== 1 ? "s" : ""}
-                          </Badge>
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Switch
-                            checked={dept.isActive}
-                            disabled={togglingDeptId === dept.id}
-                            onCheckedChange={() => void handleToggleDept(dept)}
-                            aria-label={dept.isActive ? "Deactivate department" : "Activate department"}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right pr-4" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              onClick={() => { setEditDept(dept); setDeptFormOpen(true); }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
-                                  disabled={deactivatingDeptId === dept.id || togglingDeptId === dept.id}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Department</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Permanently delete &ldquo;{dept.nameEn}&rdquo; and all its services? This cannot be undone. If this department has existing tickets, use the toggle to deactivate it instead.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => void handleDeleteDept(dept.id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {expanded && (
-                        <TableRow key={`${dept.id}-services`} className="hover:bg-transparent">
-                          <TableCell colSpan={5} className="p-0 border-t-0">
-                            <ServicesTable
-                              department={dept}
-                              onEditService={(s) => openEditService(dept.id, s)}
-                              onToggleService={(s) => void handleToggleService(dept, s)}
-                              togglingServiceId={togglingServiceId}
-                              deactivatingServiceId={deactivatingServiceId}
-                              onAddService={() => openAddService(dept.id)}
-                              onDeactivateService={(s) => void handleDeleteService(dept.id, s.id)}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </>
-                  );
-                })}
-          </TableBody>
-        </Table>
+      {/* Department cards */}
+      <div className="space-y-3">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-card px-5 py-4"
+            >
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-9 w-0.5 rounded-full" />
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-5 w-10 rounded-full" />
+            </div>
+          ))
+        ) : departments.length === 0 && !error ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/[0.06] py-16 text-muted-foreground/30">
+            <Building2 className="h-10 w-10" />
+            <p className="text-sm">No departments yet</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-1"
+              onClick={() => {
+                setEditDept(null);
+                setDeptFormOpen(true);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Add your first department
+            </Button>
+          </div>
+        ) : (
+          departments.map((dept) => (
+            <DepartmentCard
+              key={dept.id}
+              dept={dept}
+              expanded={expandedIds.has(dept.id)}
+              onToggleExpand={() => toggleExpand(dept.id)}
+              onEdit={() => {
+                setEditDept(dept);
+                setDeptFormOpen(true);
+              }}
+              onToggleActive={() => void handleToggleDept(dept)}
+              onDelete={() => void handleDeleteDept(dept.id)}
+              togglingDeptId={togglingDeptId}
+              deactivatingDeptId={deactivatingDeptId}
+              onEditService={(s) => openEditService(dept.id, s)}
+              onToggleService={(s) => void handleToggleService(dept, s)}
+              togglingServiceId={togglingServiceId}
+              deactivatingServiceId={deactivatingServiceId}
+              onAddService={() => openAddService(dept.id)}
+              onDeleteService={(s) => void handleDeleteService(dept.id, s.id)}
+            />
+          ))
+        )}
       </div>
 
-      {/* Dialogs */}
       <DeptFormDialog
         open={deptFormOpen}
         editTarget={editDept}

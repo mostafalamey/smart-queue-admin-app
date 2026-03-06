@@ -6,14 +6,6 @@ import {
   type UpdateTransferReasonInput,
 } from "./use-transfer-reasons";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -25,10 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, PowerOff, Power, Loader2, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Plus, Pencil, Loader2, Trash2, ArrowLeftRight, AlertCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -275,135 +266,133 @@ export default function TransferReasons() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-6 py-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Transfer Reasons</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage the reasons tellers can select when transferring a patient to another service.
+          <h1 className="text-xl font-bold tracking-tight">Transfer Reasons</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground/60">
+            Manage the reasons tellers can select when transferring a patient.
           </p>
         </div>
         <Button onClick={openCreate} size="sm">
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
           Add Reason
         </Button>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {error}
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-red-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-sm">{error}</span>
         </div>
       )}
 
-      {/* Table */}
-      <Card>
+      {/* Reason cards */}
+      <div className="space-y-3">
         {loading ? (
-          <div className="space-y-3 p-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full" />
-            ))}
-          </div>
+          Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-card px-5 py-4"
+            >
+              <Skeleton className="h-9 w-9 rounded-lg" />
+              <Skeleton className="h-4 w-48 flex-1" />
+              <Skeleton className="h-5 w-10 rounded-full" />
+            </div>
+          ))
         ) : reasons.length === 0 ? (
-          <p className="px-6 py-8 text-center text-sm text-muted-foreground">
-            No transfer reasons yet. Click "Add Reason" to create the first one.
-          </p>
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/[0.06] py-16 text-muted-foreground/30">
+            <ArrowLeftRight className="h-10 w-10" />
+            <p className="text-sm">No transfer reasons yet.</p>
+            <Button variant="outline" size="sm" className="mt-1" onClick={openCreate}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Add the first reason
+            </Button>
+          </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16 text-right">#</TableHead>
-                <TableHead>English Name</TableHead>
-                <TableHead>Arabic Name</TableHead>
-                <TableHead className="w-24">Status</TableHead>
-                <TableHead className="w-28 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reasons.map((reason) => (
-                <TableRow key={reason.id} className={!reason.isActive ? "opacity-50" : ""}>
-                  <TableCell className="text-right tabular-nums text-muted-foreground">
-                    {reason.sortOrder}
-                  </TableCell>
-                  <TableCell className="font-medium">{reason.nameEn}</TableCell>
-                  <TableCell dir="rtl" className="text-right font-medium">
-                    {reason.nameAr}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={reason.isActive ? "default" : "secondary"}>
-                      {reason.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openEdit(reason)}
-                        title="Edit"
+          reasons.map((reason) => (
+            <div
+              key={reason.id}
+              className={cn(
+                "flex items-center gap-4 rounded-xl border border-white/[0.08] bg-card px-5 py-4 transition-opacity",
+                !reason.isActive && "opacity-50"
+              )}
+            >
+              {/* Order badge */}
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+                <span className="font-mono text-[11px] font-bold text-primary">
+                  {reason.sortOrder}
+                </span>
+              </div>
+
+              {/* Names */}
+              <div className="min-w-0 flex-1 flex items-baseline gap-2">
+                <p className="text-sm font-semibold shrink-0">{reason.nameEn}</p>
+                <span className="text-muted-foreground/20 text-xs shrink-0">/</span>
+                <p className="text-sm text-muted-foreground/60 truncate" dir="rtl">
+                  {reason.nameAr}
+                </p>
+              </div>
+
+              {/* Active toggle */}
+              <Switch
+                checked={reason.isActive}
+                disabled={togglingId === reason.id}
+                onCheckedChange={() => void handleToggleActive(reason)}
+                aria-label={reason.isActive ? "Deactivate" : "Activate"}
+                className="shrink-0"
+              />
+
+              {/* Actions */}
+              <div className="flex shrink-0 items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground/40 hover:text-foreground"
+                  onClick={() => openEdit(reason)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                      disabled={deletingId === reason.id}
+                    >
+                      {deletingId === reason.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Transfer Reason</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Permanently delete &ldquo;{reason.nameEn}&rdquo;? This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => void handleDelete(reason)}
                       >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        disabled={togglingId === reason.id}
-                        onClick={() => handleToggleActive(reason)}
-                        title={reason.isActive ? "Deactivate" : "Reactivate"}
-                      >
-                        {togglingId === reason.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : reason.isActive ? (
-                          <PowerOff className="h-3.5 w-3.5" />
-                        ) : (
-                          <Power className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
-                            disabled={deletingId === reason.id}
-                            title="Delete"
-                          >
-                            {deletingId === reason.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3.5 w-3.5" />
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Transfer Reason</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Permanently delete &ldquo;{reason.nameEn}&rdquo;? This cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => void handleDelete(reason)}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          ))
         )}
-      </Card>
+      </div>
 
       <ReasonFormDialog
         open={dialogOpen}

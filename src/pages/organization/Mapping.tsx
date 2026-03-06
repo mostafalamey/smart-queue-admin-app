@@ -13,9 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -24,14 +24,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -80,16 +72,19 @@ interface ServiceOption {
 /* ── Device type badge ──────────────────────────────────────────────────── */
 
 const DEVICE_TYPE_COLORS: Record<DeviceType, string> = {
-  KIOSK: "bg-blue-100 text-blue-700 border-blue-200",
-  TELLER_PC: "bg-green-100 text-green-700 border-green-200",
-  SIGNAGE_PLAYER: "bg-purple-100 text-purple-700 border-purple-200",
-  LED_ADAPTER: "bg-orange-100 text-orange-700 border-orange-200",
+  KIOSK: "border-blue-400/20 bg-blue-400/10 text-blue-400",
+  TELLER_PC: "border-emerald-400/20 bg-emerald-400/10 text-emerald-400",
+  SIGNAGE_PLAYER: "border-purple-400/20 bg-purple-400/10 text-purple-400",
+  LED_ADAPTER: "border-amber-400/20 bg-amber-400/10 text-amber-400",
 };
 
 function DeviceTypeBadge({ type }: { type: DeviceType }) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${DEVICE_TYPE_COLORS[type]}`}
+      className={cn(
+        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+        DEVICE_TYPE_COLORS[type]
+      )}
     >
       {type.replace("_", " ")}
     </span>
@@ -102,30 +97,31 @@ interface DeviceFormState {
   deviceId: string;
   deviceType: DeviceType;
   displayName: string;
-  departmentId: string;
-  stationId: string;
+  assignedDepartmentId: string;
+  assignedCounterStationId: string;
 }
 
 const emptyDevice = (): DeviceFormState => ({
   deviceId: "",
   deviceType: "KIOSK",
   displayName: "",
-  departmentId: "",
-  stationId: "",
+  assignedDepartmentId: "",
+  assignedCounterStationId: "",
 });
 
 const toDeviceForm = (d: Device): DeviceFormState => ({
   deviceId: d.deviceId,
   deviceType: d.deviceType,
   displayName: d.displayName ?? "",
-  departmentId: d.departmentId ?? "",
-  stationId: d.stationId ?? "",
+  assignedDepartmentId: d.assignedDepartmentId ?? "",
+  assignedCounterStationId: d.assignedCounterStationId ?? "",
 });
 
 interface DeviceFormDialogProps {
   open: boolean;
   editTarget: Device | null;
   departments: DeptOption[];
+  stations: Station[];
   onClose: () => void;
   onCreate: (input: CreateDeviceInput) => Promise<void>;
   onUpdate: (id: string, input: UpdateDeviceInput) => Promise<void>;
@@ -135,6 +131,7 @@ function DeviceFormDialog({
   open,
   editTarget,
   departments,
+  stations,
   onClose,
   onCreate,
   onUpdate,
@@ -156,6 +153,12 @@ function DeviceFormDialog({
 
   async function handleSubmit() {
     if (!form.deviceId.trim()) { setFieldError("Device ID is required"); return; }
+    if (form.deviceType === "TELLER_PC" && !form.assignedDepartmentId) {
+      setFieldError("Department is required for Teller PC"); return;
+    }
+    if (form.deviceType === "TELLER_PC" && !form.assignedCounterStationId) {
+      setFieldError("Counter station is required for Teller PC"); return;
+    }
     setSaving(true);
     try {
       if (isCreate) {
@@ -163,16 +166,16 @@ function DeviceFormDialog({
           deviceId: form.deviceId.trim(),
           deviceType: form.deviceType,
           ...(form.displayName.trim() && { displayName: form.displayName.trim() }),
-          ...(form.departmentId && { departmentId: form.departmentId }),
-          ...(form.stationId && { stationId: form.stationId }),
+          ...(form.assignedDepartmentId && { assignedDepartmentId: form.assignedDepartmentId }),
+          ...(form.assignedCounterStationId && { assignedCounterStationId: form.assignedCounterStationId }),
         };
         await onCreate(input);
       } else {
         const input: UpdateDeviceInput = {
           deviceType: form.deviceType,
           displayName: form.displayName.trim() || undefined,
-          departmentId: form.departmentId || null,
-          stationId: form.stationId || null,
+          assignedDepartmentId: form.assignedDepartmentId || null,
+          assignedCounterStationId: form.assignedCounterStationId || null,
         };
         await onUpdate(editTarget!.id, input);
       }
@@ -233,16 +236,25 @@ function DeviceFormDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Department</Label>
+              <Label>
+                Department
+                {form.deviceType === "TELLER_PC" && <span className="text-red-400 ml-0.5">*</span>}
+              </Label>
               <Select
-                value={form.departmentId || "__none__"}
-                onValueChange={(v) => set("departmentId", v === "__none__" ? "" : v)}
+                value={form.assignedDepartmentId || "__none__"}
+                onValueChange={(v) =>
+                  setForm((p) => ({
+                    ...p,
+                    assignedDepartmentId: v === "__none__" ? "" : v,
+                    assignedCounterStationId: "",
+                  }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="None" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">None</SelectItem>
+                  {form.deviceType !== "TELLER_PC" && <SelectItem value="__none__">None</SelectItem>}
                   {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>{d.nameEn}</SelectItem>
                   ))}
@@ -250,6 +262,38 @@ function DeviceFormDialog({
               </Select>
             </div>
           </div>
+          {form.deviceType === "TELLER_PC" && (
+            <div className="space-y-1.5">
+              <Label>
+                Counter Station <span className="text-red-400">*</span>
+              </Label>
+              <Select
+                value={form.assignedCounterStationId || "__none__"}
+                onValueChange={(v) => set("assignedCounterStationId", v === "__none__" ? "" : v)}
+                disabled={!form.assignedDepartmentId}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      form.assignedDepartmentId
+                        ? "Select counter station"
+                        : "Select a department first"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {stations
+                    .filter((s) => s.service?.departmentId === form.assignedDepartmentId)
+                    .map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        <span className="font-mono text-xs text-amber-400 mr-1.5">{s.counterCode}</span>
+                        {s.service?.nameEn ?? s.serviceId}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {fieldError && (
             <p className="text-sm text-red-600 flex items-center gap-1.5">
               <AlertCircle className="h-3.5 w-3.5" />
@@ -530,22 +574,15 @@ export default function Mapping() {
     }
   }
 
-  /* ── Render ─────────────────────────────────────────────────────────── */
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Network className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">Device & Station Mapping</h1>
-            <p className="text-sm text-muted-foreground">
-              Register devices and assign counter stations to services
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Device & Station Mapping</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground/60">
+            Register devices and assign counter stations to services
+          </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => void fetch()}>
           <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
@@ -555,9 +592,9 @@ export default function Mapping() {
 
       {/* Error state */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-lg border border-red-200 bg-red-50 text-red-700">
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-red-400">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          <span className="text-sm flex-1">{error}</span>
+          <span className="flex-1 text-sm">{error}</span>
           <Button variant="outline" size="sm" onClick={() => void fetch()}>Retry</Button>
         </div>
       )}
@@ -568,231 +605,207 @@ export default function Mapping() {
           <TabsTrigger value="devices" className="gap-1.5">
             <Monitor className="h-3.5 w-3.5" />
             Devices
-            <Badge variant="secondary" className="ml-1 text-xs">{devices.length}</Badge>
+            <span className="ml-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold">{devices.length}</span>
           </TabsTrigger>
           <TabsTrigger value="stations" className="gap-1.5">
             <Server className="h-3.5 w-3.5" />
             Counter Stations
-            <Badge variant="secondary" className="ml-1 text-xs">{stations.length}</Badge>
+            <span className="ml-1 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold">{stations.length}</span>
           </TabsTrigger>
         </TabsList>
 
         {/* ── Devices Tab ─────────────────────────────────────────────── */}
-        <TabsContent value="devices" className="mt-4">
-          <div className="flex justify-end mb-3">
+        <TabsContent value="devices" className="mt-4 space-y-3">
+          <div className="flex justify-end">
             <Button size="sm" onClick={() => { setEditDevice(null); setDeviceFormOpen(true); }}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Register Device
             </Button>
           </div>
-          <div className="rounded-lg border bg-card overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40">
-                  <TableHead>Device ID</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Display Name</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead className="text-right pr-4">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading
-                  ? Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i}>
-                        {Array.from({ length: 6 }).map((_, j) => (
-                          <TableCell key={j}><Skeleton className="h-4 w-24" /></TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  : devices.length === 0 && !error
-                  ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                          <Monitor className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                          No devices registered
-                        </TableCell>
-                      </TableRow>
+
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-card px-5 py-4">
+                <Skeleton className="h-9 w-24 rounded-lg" />
+                <Skeleton className="h-4 w-48 flex-1" />
+                <Skeleton className="h-5 w-10 rounded-full" />
+              </div>
+            ))
+          ) : devices.length === 0 && !error ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/[0.06] py-16 text-muted-foreground/30">
+              <Monitor className="h-10 w-10" />
+              <p className="text-sm">No devices registered</p>
+            </div>
+          ) : (
+            devices.map((device) => (
+              <div
+                key={device.id}
+                className={cn(
+                  "flex items-center gap-4 rounded-xl border border-white/[0.08] bg-card px-5 py-4 transition-opacity",
+                  !device.isActive && "opacity-50"
+                )}
+              >
+                <DeviceTypeBadge type={device.deviceType} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-sm font-semibold">{device.deviceId}</p>
+                  {device.displayName && (
+                    <p className="text-xs text-muted-foreground/50 mt-0.5">{device.displayName}</p>
+                  )}
+                </div>
+                {device.deviceType === "TELLER_PC"
+                  ? device.counterStation && (
+                      <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1 text-[11px] text-muted-foreground/50 sm:flex">
+                        {services.find((s) => s.id === device.counterStation!.serviceId)?.nameEn ?? device.counterStation.serviceId}
+                      </span>
                     )
-                  : devices.map((device) => (
-                      <TableRow key={device.id} className="group">
-                        <TableCell>
-                          <code className="text-sm font-mono">{device.deviceId}</code>
-                        </TableCell>
-                        <TableCell>
-                          <DeviceTypeBadge type={device.deviceType} />
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {device.displayName ?? <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {device.department?.nameEn ?? <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={device.isActive}
-                            disabled={togglingDeviceId === device.id}
-                            onCheckedChange={() => void handleToggleDevice(device)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right pr-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              onClick={() => { setEditDevice(device); setDeviceFormOpen(true); }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
-                                  disabled={togglingDeviceId === device.id}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Deactivate Device</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Deactivate &ldquo;{device.displayName ?? device.deviceId}&rdquo;? It will no longer be able to connect to the system.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => void handleDeleteDevice(device.id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-              </TableBody>
-            </Table>
-          </div>
+                  : device.department?.nameEn && (
+                      <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1 text-[11px] text-muted-foreground/50 sm:flex">
+                        {device.department.nameEn}
+                      </span>
+                    )}
+                <Switch
+                  checked={device.isActive}
+                  disabled={togglingDeviceId === device.id}
+                  onCheckedChange={() => void handleToggleDevice(device)}
+                  className="shrink-0"
+                />
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <Button
+                    variant="ghost" size="icon"
+                    className="h-8 w-8 text-muted-foreground/40 hover:text-foreground"
+                    onClick={() => { setEditDevice(device); setDeviceFormOpen(true); }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                        disabled={togglingDeviceId === device.id}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Device</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Permanently delete &ldquo;{device.displayName ?? device.deviceId}&rdquo;? This cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => void handleDeleteDevice(device.id)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))
+          )}
         </TabsContent>
 
         {/* ── Stations Tab ────────────────────────────────────────────── */}
-        <TabsContent value="stations" className="mt-4">
-          <div className="flex justify-end mb-3">
+        <TabsContent value="stations" className="mt-4 space-y-3">
+          <div className="flex justify-end">
             <Button size="sm" onClick={() => { setEditStation(null); setStationFormOpen(true); }}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Create Station
             </Button>
           </div>
-          <div className="rounded-lg border bg-card overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40">
-                  <TableHead>Counter Code</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead className="text-right pr-4">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading
-                  ? Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i}>
-                        {Array.from({ length: 5 }).map((_, j) => (
-                          <TableCell key={j}><Skeleton className="h-4 w-24" /></TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  : stations.length === 0 && !error
-                  ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                          <Server className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                          No stations created
-                        </TableCell>
-                      </TableRow>
-                    )
-                  : stations.map((station) => (
-                      <TableRow key={station.id} className="group">
-                        <TableCell>
-                          <code className="text-sm font-mono">{station.counterCode}</code>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {station.service?.nameEn ?? (
-                            services.find((s) => s.id === station.serviceId)?.nameEn ?? (
-                              <span className="text-muted-foreground text-xs font-mono">{station.serviceId}</span>
-                            )
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {station.service?.department?.nameEn ?? (
-                            services.find((s) => s.id === station.serviceId)?.departmentNameEn ?? (
-                              <span className="text-muted-foreground">—</span>
-                            )
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={station.isActive}
-                            disabled={togglingStationId === station.id}
-                            onCheckedChange={() => void handleToggleStation(station)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right pr-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              onClick={() => { setEditStation(station); setStationFormOpen(true); }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
-                                  disabled={togglingStationId === station.id}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Deactivate Station</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Deactivate counter &ldquo;{station.counterCode}&rdquo;? Tellers assigned to this station will lose their queue access.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => void handleDeleteStation(station.id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-              </TableBody>
-            </Table>
-          </div>
+
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 rounded-xl border border-white/[0.06] bg-card px-5 py-4">
+                <Skeleton className="h-9 w-12 rounded-lg" />
+                <Skeleton className="h-4 w-48 flex-1" />
+                <Skeleton className="h-5 w-10 rounded-full" />
+              </div>
+            ))
+          ) : stations.length === 0 && !error ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/[0.06] py-16 text-muted-foreground/30">
+              <Server className="h-10 w-10" />
+              <p className="text-sm">No stations created</p>
+            </div>
+          ) : (
+            stations.map((station) => {
+              const svcName = station.service?.nameEn ?? services.find((s) => s.id === station.serviceId)?.nameEn;
+              const deptName = station.service?.department?.nameEn ?? services.find((s) => s.id === station.serviceId)?.departmentNameEn;
+              return (
+                <div
+                  key={station.id}
+                  className={cn(
+                    "flex items-center gap-4 rounded-xl border border-white/[0.08] bg-card px-5 py-4 transition-opacity",
+                    !station.isActive && "opacity-50"
+                  )}
+                >
+                  <div className="flex h-9 w-14 shrink-0 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-400/10">
+                    <span className="font-mono text-[11px] font-bold tracking-wider text-amber-400">
+                      {station.counterCode}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1 flex items-baseline gap-2">
+                    <p className="text-sm font-semibold shrink-0">{svcName ?? station.serviceId}</p>
+                    {deptName && (
+                      <>
+                        <span className="text-muted-foreground/20 text-xs shrink-0">/</span>
+                        <p className="text-sm text-muted-foreground/60 truncate">{deptName}</p>
+                      </>
+                    )}
+                  </div>
+                  <Switch
+                    checked={station.isActive}
+                    disabled={togglingStationId === station.id}
+                    onCheckedChange={() => void handleToggleStation(station)}
+                    className="shrink-0"
+                  />
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <Button
+                      variant="ghost" size="icon"
+                      className="h-8 w-8 text-muted-foreground/40 hover:text-foreground"
+                      onClick={() => { setEditStation(station); setStationFormOpen(true); }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                          disabled={togglingStationId === station.id}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Station</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Permanently delete counter &ldquo;{station.counterCode}&rdquo;? This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => void handleDeleteStation(station.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </TabsContent>
       </Tabs>
 
@@ -801,6 +814,7 @@ export default function Mapping() {
         open={deviceFormOpen}
         editTarget={editDevice}
         departments={departments}
+        stations={stations}
         onClose={() => setDeviceFormOpen(false)}
         onCreate={handleCreateDevice}
         onUpdate={handleUpdateDevice}

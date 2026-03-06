@@ -11,10 +11,10 @@ export interface Device {
   deviceType: DeviceType;
   displayName: string | null;
   isActive: boolean;
-  departmentId: string | null;
-  stationId: string | null;
+  assignedDepartmentId: string | null;
+  assignedCounterStationId: string | null;
   department?: { id: string; nameEn: string } | null;
-  station?: { id: string; counterCode: string } | null;
+  counterStation?: { id: string; counterCode: string; serviceId: string } | null;
 }
 
 export interface Station {
@@ -22,23 +22,23 @@ export interface Station {
   counterCode: string;
   isActive: boolean;
   serviceId: string;
-  service?: { id: string; nameEn: string; department?: { nameEn: string } } | null;
+  service?: { id: string; nameEn: string; departmentId: string } | null;
 }
 
 export interface CreateDeviceInput {
   deviceId: string;
   deviceType: DeviceType;
   displayName?: string;
-  departmentId?: string;
-  stationId?: string;
+  assignedDepartmentId?: string;
+  assignedCounterStationId?: string;
 }
 
 export interface UpdateDeviceInput {
   displayName?: string;
   deviceType?: DeviceType;
   isActive?: boolean;
-  departmentId?: string | null;
-  stationId?: string | null;
+  assignedDepartmentId?: string | null;
+  assignedCounterStationId?: string | null;
 }
 
 export interface CreateStationInput {

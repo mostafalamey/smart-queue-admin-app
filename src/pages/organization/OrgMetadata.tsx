@@ -1,11 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useOrgMetadata, type UpdateOrgInput } from "./use-org-metadata";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Save, X, Building2 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Loader2,
+  Save,
+  X,
+  AlertCircle,
+  RefreshCw,
+  Globe,
+  Mail,
+  MapPin,
+  Clock,
+  Building2,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 /* ── Form state ─────────────────────────────────────────────────────────── */
@@ -27,6 +52,132 @@ function validateForm(f: FormState): string | null {
   if (f.website && !/^https?:\/\/.+/.test(f.website.trim()))
     return "Website must start with http:// or https://";
   return null;
+}
+
+/* ── Timezone combobox ──────────────────────────────────────────────────── */
+
+function TimezoneCombobox({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (tz: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const allTimezones = useMemo(
+    () => Intl.supportedValuesOf("timeZone"),
+    []
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    if (!q) return allTimezones.slice(0, 80);
+    return allTimezones.filter((tz) => tz.toLowerCase().includes(q)).slice(0, 80);
+  }, [allTimezones, search]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={cn(!value && "text-muted-foreground/40")}>
+            {value || "Select timezone…"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search timezones…"
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandEmpty>No timezone found.</CommandEmpty>
+            <CommandGroup>
+              {filtered.map((tz) => (
+                <CommandItem
+                  key={tz}
+                  value={tz}
+                  onSelect={(v) => {
+                    onChange(v);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-3.5 w-3.5",
+                      value === tz ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {tz}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/* ── Field row ──────────────────────────────────────────────────────────── */
+
+function FieldRow({
+  icon: Icon,
+  label,
+  hint,
+  required,
+  children,
+  dirty,
+}: {
+  icon: React.ElementType;
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+  dirty?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-5 rounded-xl border px-5 py-4 transition-colors",
+        dirty
+          ? "border-primary/30 bg-primary/[0.04]"
+          : "border-white/[0.08] bg-card"
+      )}
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.03]">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground/50" />
+      </div>
+      <div className="w-44 shrink-0">
+        <p className="text-sm font-medium">
+          {label}
+          {required && <span className="ml-0.5 text-red-400">*</span>}
+        </p>
+        {hint && <p className="mt-0.5 text-[11px] text-muted-foreground/40">{hint}</p>}
+      </div>
+      <div className="flex-1">{children}</div>
+    </div>
+  );
+}
+
+/* ── Section label ──────────────────────────────────────────────────────── */
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/30">
+      {children}
+    </p>
+  );
 }
 
 /* ── OrgMetadata page ───────────────────────────────────────────────────── */
@@ -83,8 +234,7 @@ export default function OrgMetadata() {
     setFormError(null);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
     const err = validateForm(form);
     if (err) { setFormError(err); return; }
 
@@ -98,10 +248,7 @@ export default function OrgMetadata() {
       if (form.timezone !== org.timezone) input.timezone = form.timezone.trim();
     }
 
-    if (Object.keys(input).length === 0) {
-      setDirty(false);
-      return;
-    }
+    if (Object.keys(input).length === 0) { setDirty(false); return; }
 
     setSaving(true);
     try {
@@ -112,32 +259,53 @@ export default function OrgMetadata() {
       const e = err as Record<string, unknown>;
       setFormError(
         (typeof e?.message === "string" && e.message) ||
-        (err instanceof Error ? err.message : "Save failed")
+          (err instanceof Error ? err.message : "Save failed")
       );
     } finally {
       setSaving(false);
     }
   };
 
+  /* Field-level dirty check */
+  const isDirty = (key: keyof FormState) => {
+    if (!org) return false;
+    const original = key === "address" || key === "email" || key === "website"
+      ? (org[key] ?? "")
+      : org[key as "nameEn" | "nameAr" | "timezone"];
+    return form[key] !== original;
+  };
+
+  /* ── Loading ──────────────────────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="p-6">
-        <Skeleton className="h-8 w-64 mb-6" />
-        <div className="space-y-4 max-w-xl">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-52" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+        </div>
+        <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
+            <Skeleton key={i} className="h-[68px] w-full rounded-xl" />
           ))}
         </div>
       </div>
     );
   }
 
+  /* ── Error ────────────────────────────────────────────────────────────── */
   if (error) {
     return (
-      <div className="p-6">
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive max-w-xl">
-          {error}
-          <Button variant="link" className="ml-2 h-auto p-0 text-destructive" onClick={() => void fetch()}>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Organization Metadata</h1>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-red-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-sm">{error}</span>
+          <Button variant="outline" size="sm" onClick={() => void fetch()}>
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Retry
           </Button>
         </div>
@@ -145,120 +313,134 @@ export default function OrgMetadata() {
     );
   }
 
+  /* ── Main ─────────────────────────────────────────────────────────────── */
   return (
-    <div className="p-6 max-w-2xl space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-primary/10 p-2">
-          <Building2 className="h-5 w-5 text-primary" />
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Organization Details</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage your hospital's public identity and contact information.
+          <h1 className="text-xl font-bold tracking-tight">Organization Metadata</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground/60">
+            Hospital identity and contact details
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {dirty && (
+            <Button variant="outline" size="sm" onClick={handleReset} disabled={saving}>
+              <X className="h-3.5 w-3.5 mr-1.5" />
+              Discard
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={() => void handleSave()}
+            disabled={saving || !dirty}
+          >
+            {saving ? (
+              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5 mr-1.5" />
+            )}
+            Save Changes
+          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Basic Information</CardTitle>
-          <CardDescription>Hospital name and contact details visible to patients and staff.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSave} className="space-y-5">
-            {formError && (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {formError}
-              </div>
-            )}
+      {/* Validation error */}
+      {formError && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-red-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="text-sm">{formError}</span>
+        </div>
+      )}
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="nameEn">English Name <span className="text-destructive">*</span></Label>
-              <Input
-                id="nameEn"
-                value={form.nameEn}
-                onChange={(e) => set("nameEn", e.target.value)}
-                placeholder="e.g. City General Hospital"
-              />
-            </div>
+      {/* Identity section */}
+      <div className="space-y-3">
+        <SectionLabel>Identity</SectionLabel>
+        <FieldRow
+          icon={Building2}
+          label="English Name"
+          required
+          dirty={isDirty("nameEn")}
+        >
+          <Input
+            value={form.nameEn}
+            onChange={(e) => set("nameEn", e.target.value)}
+            placeholder="e.g. City General Hospital"
+          />
+        </FieldRow>
+        <FieldRow
+          icon={Building2}
+          label="Arabic Name"
+          hint="Displayed right-to-left"
+          required
+          dirty={isDirty("nameAr")}
+        >
+          <Input
+            dir="rtl"
+            value={form.nameAr}
+            onChange={(e) => set("nameAr", e.target.value)}
+            placeholder="مستشفى المدينة العام"
+            className="text-right"
+          />
+        </FieldRow>
+      </div>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="nameAr">Arabic Name <span className="text-destructive">*</span></Label>
-              <Input
-                id="nameAr"
-                dir="rtl"
-                value={form.nameAr}
-                onChange={(e) => set("nameAr", e.target.value)}
-                placeholder="e.g. مستشفى المدينة العام"
-              />
-            </div>
+      {/* Contact section */}
+      <div className="space-y-3">
+        <SectionLabel>Contact</SectionLabel>
+        <FieldRow
+          icon={MapPin}
+          label="Address"
+          dirty={isDirty("address")}
+        >
+          <Input
+            value={form.address}
+            onChange={(e) => set("address", e.target.value)}
+            placeholder="King Fahd Road, Riyadh"
+          />
+        </FieldRow>
+        <FieldRow
+          icon={Mail}
+          label="Contact Email"
+          dirty={isDirty("email")}
+        >
+          <Input
+            type="email"
+            value={form.email}
+            onChange={(e) => set("email", e.target.value)}
+            placeholder="info@hospital.com"
+          />
+        </FieldRow>
+        <FieldRow
+          icon={Globe}
+          label="Website"
+          dirty={isDirty("website")}
+        >
+          <Input
+            type="url"
+            value={form.website}
+            onChange={(e) => set("website", e.target.value)}
+            placeholder="https://hospital.com"
+          />
+        </FieldRow>
+      </div>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                value={form.address}
-                onChange={(e) => set("address", e.target.value)}
-                placeholder="e.g. King Fahd Road, Riyadh"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-1.5">
-                <Label htmlFor="email">Contact Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => set("email", e.target.value)}
-                  placeholder="info@hospital.com"
-                />
-              </div>
-
-              <div className="grid gap-1.5">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={form.website}
-                  onChange={(e) => set("website", e.target.value)}
-                  placeholder="https://hospital.com"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="timezone">Timezone</Label>
-              <Input
-                id="timezone"
-                value={form.timezone}
-                onChange={(e) => set("timezone", e.target.value)}
-                placeholder="e.g. Asia/Riyadh"
-              />
-              <p className="text-xs text-muted-foreground">
-                IANA timezone identifier — affects ticket date bucketing and daily queue resets.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <Button type="submit" disabled={saving || !dirty}>
-                {saving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Save Changes
-              </Button>
-              {dirty && (
-                <Button type="button" variant="outline" onClick={handleReset} disabled={saving}>
-                  <X className="mr-2 h-4 w-4" />
-                  Discard
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      {/* System section */}
+      <div className="space-y-3">
+        <SectionLabel>System</SectionLabel>
+        <FieldRow
+          icon={Clock}
+          label="Timezone"
+          hint="Affects ticket date bucketing & daily resets"
+          dirty={isDirty("timezone")}
+        >
+          <TimezoneCombobox
+            value={form.timezone}
+            onChange={(tz) => set("timezone", tz)}
+          />
+        </FieldRow>
+      </div>
     </div>
   );
 }
