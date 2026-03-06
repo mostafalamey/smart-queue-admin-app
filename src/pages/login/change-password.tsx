@@ -137,7 +137,7 @@ export default function ChangePasswordPage() {
           />
           <h1
             className="text-2xl font-bold tracking-tight text-foreground"
-            style={{ fontFamily: "var(--font-serif)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Change Password
           </h1>

@@ -32,7 +32,7 @@ The admin app has a **production-quality shell** with zero business logic:
 | **Queue Control page** | ✅ Implemented (Phase C) — full dashboard, search, detail, priority change |
 | **WebSocket / realtime integration** | **Not implemented** |
 | **i18n (Arabic/English)** | **Not configured** |
-| **Organization sub-pages (5 pages)** | **Empty stubs** |
+| **Organization sub-pages (5 pages)** | ✅ Implemented (Phase D) — Metadata, Users, Departments, Mapping, Transfer Reasons |
 | **User Experience, Analytics pages** | **Empty stubs** |
 
 ### Backend Endpoint Availability
@@ -143,88 +143,64 @@ The admin app has a **production-quality shell** with zero business logic:
 
 ---
 
-### Phase D — Organization Page
+### Phase D — Organization Page ✅
 **Goal:** Unified organization management hub — metadata, users, departments, mapping, and transfer reasons.
 
 **Priority:** High — Admin + IT, critical for system setup.
+
+**Completed:** 2026-03-06
 
 **Navigation:** Organization appears as a collapsible sidebar item with 5 sub-tabs.
 All sub-tabs are accessible to Admin and IT roles.
 
 **Route:** `/organization/*` (sub-routes: `/metadata`, `/users`, `/departments`, `/mapping`, `/transfer-reasons`)
 
-#### D.1 — Organization Metadata (`/organization/metadata`)
+#### D.1 — Organization Metadata (`/organization/metadata`) ✅
 **Todos:**
-1. **Organization info form** — editable fields: logo, name, address, email, website.
-2. **Logo upload** — call `POST /users/:id/avatar` pattern (or a dedicated org logo endpoint).
-   - *Backend dependency:* organization metadata endpoints — **needs backend work**.
-3. **Save/cancel UX** with validation.
+1. ✅ **Organization info form** — editable fields: name (EN/AR), address, email, website, timezone.
+2. **Logo upload** — deferred; no dedicated logo endpoint available yet.
+3. ✅ **Save/cancel UX** with validation, dirty tracking, skeleton loading, error retry.
 
-#### D.2 — User Management (`/organization/users`)
+#### D.2 — User Management (`/organization/users`) ✅
 **Todos:**
-1. **Users list table** — DataTable with columns: name, email, role, department, status (active/disabled).
-   - *Backend dependency:* `GET /admin/users` — **needs backend work**.
-2. **Create user form** — fields: name, email, role selector, department selector (for Manager/Staff), temporary password.
-   - Password validation: min 12 chars, 1 uppercase, 1 lowercase, 1 digit, 1 symbol.
-   - *Backend dependency:* `POST /admin/users` — **needs backend work**.
-3. **Edit user form** — update name, role, department assignment, enable/disable.
-   - *Backend dependency:* `PATCH /admin/users/:id` — **needs backend work**.
-4. **Password reset** — Admin sets a temporary password + `mustChangePassword` flag.
-   - *Backend dependency:* `POST /admin/users/:id/reset-password` — **needs backend work**.
-5. **User avatar upload** — optional profile picture.
-   - *Backend dependency:* `POST /users/:id/avatar` — **needs backend work**.
-6. **Role assignment rules:**
-   - Manager: must assign exactly one department.
-   - Staff: must assign exactly one department.
-   - Admin/IT: no department scope.
+1. ✅ **Users list table** — columns: name, email, role badge, department, active toggle, actions.
+2. ✅ **Create user form** — email, display name, password (min 8), role selector, department selector (required for Manager/Staff).
+3. ✅ **Edit user form** — update name, email, role, department assignment, enable/disable.
+4. ✅ **Password reset** — separate dialog for setting new password.
+5. **User avatar upload** — deferred; no dedicated avatar endpoint in Phase D.
+6. ✅ **Role assignment rules** enforced: Manager/Staff require departmentId; Admin/IT must not have departmentId.
 
-#### D.3 — Departments Structure (`/organization/departments`)
+#### D.3 — Departments Structure (`/organization/departments`) ✅
 **Todos:**
-1. **Departments table** — DataTable with columns: name (Arabic), name (English), service count, status.
-   - Uses `GET /departments` (public, exists) for listing.
-2. **Create department** — form/modal with name (Arabic) + name (English).
-   - *Backend dependency:* `POST /admin/departments` — **needs backend work**.
-3. **Edit department** — modal editing of department names.
-   - *Backend dependency:* `PATCH /admin/departments/:id` — **needs backend work**.
-4. **Deactivate department** — soft-delete with confirmation.
-   - *Backend dependency:* `DELETE /admin/departments/:id` — **needs backend work**.
-5. **Services sub-table** — when a department row is expanded or selected, show a services DataTable below with columns: name (Arabic), name (English), ticket prefix, estimated wait time, status.
-   - Uses `GET /departments/:id/services` (exists) for listing.
-6. **Create service** — form/modal with: name (Arabic), name (English), ticket prefix, estimated wait time.
-   - *Backend dependency:* `POST /admin/departments/:id/services` — **needs backend work**.
-7. **Edit service** — modal editing of service fields.
-   - *Backend dependency:* `PATCH /admin/services/:id` — **needs backend work**.
-8. **Deactivate service** — soft-delete with confirmation.
-   - *Backend dependency:* `DELETE /admin/services/:id` — **needs backend work**.
-9. **Validation rules:**
-   - Ticket prefix must be unique across the hospital.
-   - Department/service names in both languages required.
+1. ✅ **Departments table** — columns: name EN/AR, service count badge, active toggle, edit.
+2. ✅ **Create department** — modal with name EN + AR.
+3. ✅ **Edit department** — modal editing of department names.
+4. ✅ **Deactivate department** — via active toggle (calls `DELETE /admin/departments/:id` or `PATCH isActive`).
+5. ✅ **Services sub-table** — expand/collapse row reveals inline services table.
+6. ✅ **Create service** — modal with name EN/AR, ticket prefix, estimated wait, nearing threshold, daily reset.
+7. ✅ **Edit service** — modal editing all service fields.
+8. ✅ **Deactivate service** — via active toggle.
+9. ✅ **Validation rules** — names in both languages required; prefix limited to 1–4 uppercase letters.
 
-#### D.4 — Mapping (`/organization/mapping`)
+#### D.4 — Mapping (`/organization/mapping`) ✅
 **Todos:**
-1. **Device registry table** — list all registered devices (kiosks, teller PCs, signage players).
-   - *Backend dependency:* `GET /admin/devices` — **needs backend work**.
-2. **Enroll device** — register a new device by Device ID + type + label.
-   - *Backend dependency:* `POST /admin/devices` — **needs backend work**.
-3. **Counter-to-service binding** — bind a counter station to a service + department.
-   - Uses `POST /admin/config/mapping` (exists, but may need expansion).
-4. **Teller PC binding** — bind a Device ID to a counter station.
-   - Uses existing mapping endpoint.
-5. **Kiosk configuration** — assign mode (reception/department-locked), department, remote config.
-   - *Backend dependency:* kiosk config endpoints — **needs backend work**.
-6. **Signage player zoning** — assign a signage device to a department zone.
-   - *Backend dependency:* signage config endpoints — **needs backend work**.
+1. ✅ **Device registry table** — two-tab layout (Devices / Counter Stations).
+2. ✅ **Register device** — form with deviceId, type (KIOSK/TELLER_PC/SIGNAGE_PLAYER/LED_ADAPTER), displayName, department assignment.
+3. ✅ **Counter stations table** — counterCode, assigned service, department, active toggle.
+4. ✅ **Create/edit station** — counterCode + serviceId selector (grouped by department).
+5. ✅ **Activate/deactivate** toggles for both devices and stations.
+6. **Kiosk remote config / signage zoning** — deferred to a future phase; no backend endpoints for these yet.
 
-#### D.5 — Transfer Reasons (`/organization/transfer-reasons`)
+#### D.5 — Transfer Reasons (`/organization/transfer-reasons`) ✅ Completed 2026-03-05
 **Todos:**
-1. **Transfer reasons list** — DataTable with columns: Arabic name, English name, display order, active status.
+1. ✅ **Transfer reasons list** — DataTable with columns: Arabic name, English name, display order, active status.
    - Uses `GET /admin/transfer-reasons` (exists).
-2. **Create reason form** — Arabic name + English name.
+2. ✅ **Create reason form** — Arabic name + English name.
    - Uses `POST /admin/transfer-reasons` (exists).
-3. **Edit reason** — inline or modal.
+3. ✅ **Edit reason** — inline or modal.
    - Uses `PATCH /admin/transfer-reasons/:id` (exists).
-4. **Deactivate/reactivate toggle** — soft-delete via `DELETE /admin/transfer-reasons/:id` (exists).
-5. **Display order** — editable order field.
+4. ✅ **Deactivate/reactivate toggle** — soft-delete via `DELETE /admin/transfer-reasons/:id` (exists); reactivate via `PATCH isActive: true`.
+5. ✅ **Display order** — editable order field.
 
 **Backend dependencies (new endpoints needed — all sub-tabs combined):**
 - `GET /admin/users` — list users
@@ -404,7 +380,7 @@ Phases C through F can be developed **in parallel** once B is complete, subject 
 | 1 | A — Auth | ✅ Complete |
 | 2 | B — RBAC | ✅ Complete |
 | 3 | C — Queue Control | ✅ Complete — dashboard, search, detail, priority change (WebSocket deferred to Phase H) |
-| 4 | D — Organization | Not started (transfer reasons ready; user mgmt, dept CRUD, mapping, org metadata need backend work) |
+| 4 | D — Organization | D.5 Transfer Reasons ✅ Complete (2026-03-05); remainder not started (user mgmt, dept CRUD, mapping, org metadata need backend work) |
 | 5 | E — User Experience | Not started (needs patient text config endpoint) |
 | 6 | F — Analytics | Not started (needs analytics endpoints) |
 | 7 | G — i18n | Not started (independent) |
