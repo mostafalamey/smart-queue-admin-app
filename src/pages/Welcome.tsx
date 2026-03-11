@@ -58,17 +58,23 @@ export default function Welcome() {
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-10">
       {/* Greeting */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+      <div className="mb-10">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+          Smart Queue Admin
+        </p>
+        <h1
+          className="text-3xl font-bold tracking-tight text-foreground"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
           Welcome back, {firstName}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm text-muted-foreground">
           Choose a section to get started.
         </p>
       </div>
 
       {/* Section cards */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {sections.map(({ label, description, icon: Icon, path }) => (
           <Card
             key={path}
@@ -81,17 +87,20 @@ export default function Welcome() {
                 navigate(path);
               }
             }}
-            className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="cursor-pointer group border border-border transition-all duration-200 hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <CardHeader className="flex flex-row items-start gap-3 p-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon size={18} />
+            <CardHeader className="flex flex-row items-start gap-4 p-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                <Icon size={20} />
               </div>
               <div className="min-w-0">
-                <CardTitle className="text-sm font-semibold leading-tight">
+                <CardTitle
+                  className="text-sm font-semibold leading-tight mb-1"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
                   {label}
                 </CardTitle>
-                <CardDescription className="mt-0.5 text-xs leading-snug">
+                <CardDescription className="text-xs leading-relaxed">
                   {description}
                 </CardDescription>
               </div>
