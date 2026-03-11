@@ -35,7 +35,7 @@ export interface UpdateUserInput {
   name?: string;
   isActive?: boolean;
   role?: UserRole;
-  departmentId?: string;
+  departmentId?: string | null;
 }
 
 interface ListResponse {
@@ -107,6 +107,9 @@ export function useUserManagement() {
         method: "POST",
         body: JSON.stringify({ newPassword }),
       });
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, mustChangePassword: true } : u))
+      );
     },
     []
   );

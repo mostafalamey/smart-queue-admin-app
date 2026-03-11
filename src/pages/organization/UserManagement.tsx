@@ -8,7 +8,6 @@ import {
   Users,
   RefreshCw,
   AlertCircle,
-  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,8 +87,8 @@ function validateUserForm(f: UserFormState, isCreate: boolean): string | null {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()))
     return "Enter a valid email address";
   if (isCreate && !f.password) return "Password is required";
-  if (isCreate && f.password.length < 8)
-    return "Password must be at least 8 characters";
+  if (isCreate && f.password.length < 12)
+    return "Password must be at least 12 characters";
   if ((f.role === "MANAGER" || f.role === "STAFF") && !f.departmentId)
     return `Department is required for ${f.role} role`;
   return null;
@@ -172,9 +171,7 @@ function UserFormDialog({
           email: form.email.trim(),
           role: form.role,
           ...(form.name.trim() && { name: form.name.trim() }),
-          ...(needsDept && form.departmentId
-            ? { departmentId: form.departmentId }
-            : { departmentId: undefined }),
+          departmentId: needsDept && form.departmentId ? form.departmentId : null,
         };
         await onUpdate(editTarget!.id, input);
       }
@@ -234,7 +231,18 @@ function UserFormDialog({
             )}
             <div className="space-y-1.5">
               <Label>Role *</Label>
-              <Select value={form.role} onValueChange={(v) => set("role", v as UserRole)}>
+              <Select
+                value={form.role}
+                onValueChange={(v) => {
+                  const newRole = v as UserRole;
+                  const newNeedsDept = newRole === "MANAGER" || newRole === "STAFF";
+                  setForm((p) => ({
+                    ...p,
+                    role: newRole,
+                    departmentId: newNeedsDept ? p.departmentId : "",
+                  }));
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

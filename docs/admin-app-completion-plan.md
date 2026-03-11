@@ -199,7 +199,7 @@ All sub-tabs are accessible to Admin and IT roles.
    - Uses `POST /admin/transfer-reasons` (exists).
 3. ✅ **Edit reason** — inline or modal.
    - Uses `PATCH /admin/transfer-reasons/:id` (exists).
-4. ✅ **Deactivate/reactivate toggle** — soft-delete via `DELETE /admin/transfer-reasons/:id` (exists); reactivate via `PATCH isActive: true`.
+4. ✅ **Deactivate/reactivate toggle** — soft-deactivation via `PATCH /admin/transfer-reasons/:id` with `{ isActive: false }`; reactivate via `PATCH isActive: true`. Hard delete (permanent removal) uses `DELETE /admin/transfer-reasons/:id`.
 5. ✅ **Display order** — editable order field.
 
 **Backend dependencies (new endpoints needed — all sub-tabs combined):**
@@ -380,7 +380,7 @@ Phases C through F can be developed **in parallel** once B is complete, subject 
 | 1 | A — Auth | ✅ Complete |
 | 2 | B — RBAC | ✅ Complete |
 | 3 | C — Queue Control | ✅ Complete — dashboard, search, detail, priority change (WebSocket deferred to Phase H) |
-| 4 | D — Organization | D.5 Transfer Reasons ✅ Complete (2026-03-05); remainder not started (user mgmt, dept CRUD, mapping, org metadata need backend work) |
+| 4 | D — Organization | ✅ Complete — D.1–D.5 delivered (user mgmt, dept CRUD, mapping, org metadata, transfer reasons) |
 | 5 | E — User Experience | Not started (needs patient text config endpoint) |
 | 6 | F — Analytics | Not started (needs analytics endpoints) |
 | 7 | G — i18n | Not started (independent) |

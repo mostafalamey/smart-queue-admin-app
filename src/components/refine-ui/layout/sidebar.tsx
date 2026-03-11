@@ -172,7 +172,8 @@ function SidebarItemCollapsible({ item, selectedKey }: MenuItemProps) {
     setIsOpen(next);
     const map = getSidebarCollapsedMap();
     map[itemKey] = next;
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(map));
+    try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(map)); } 
+    catch { /* ignore */ }
   }
 
   const chevronIcon = (

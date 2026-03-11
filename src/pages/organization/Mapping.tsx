@@ -8,7 +8,6 @@ import {
   Server,
   RefreshCw,
   AlertCircle,
-  Network,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -668,12 +667,14 @@ export default function Mapping() {
                   disabled={togglingDeviceId === device.id}
                   onCheckedChange={() => void handleToggleDevice(device)}
                   className="shrink-0"
+                  aria-label={`Toggle active status for device ${device.displayName ?? device.deviceId}`}
                 />
                 <div className="flex shrink-0 items-center gap-0.5">
                   <Button
                     variant="ghost" size="icon"
                     className="h-8 w-8 text-muted-foreground/40 hover:text-foreground"
                     onClick={() => { setEditDevice(device); setDeviceFormOpen(true); }}
+                    aria-label={`Edit device ${device.displayName ?? device.deviceId}`}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
@@ -736,7 +737,9 @@ export default function Mapping() {
           ) : (
             stations.map((station) => {
               const svcName = station.service?.nameEn ?? services.find((s) => s.id === station.serviceId)?.nameEn;
-              const deptName = station.service?.department?.nameEn ?? services.find((s) => s.id === station.serviceId)?.departmentNameEn;
+              const deptName = (station.service?.departmentId
+                ? departments.find((d) => d.id === station.service!.departmentId)?.nameEn
+                : undefined) ?? services.find((s) => s.id === station.serviceId)?.departmentNameEn;
               return (
                 <div
                   key={station.id}
@@ -764,12 +767,14 @@ export default function Mapping() {
                     disabled={togglingStationId === station.id}
                     onCheckedChange={() => void handleToggleStation(station)}
                     className="shrink-0"
+                    aria-label={`Toggle active state for counter ${station.counterCode}`}
                   />
                   <div className="flex shrink-0 items-center gap-0.5">
                     <Button
                       variant="ghost" size="icon"
                       className="h-8 w-8 text-muted-foreground/40 hover:text-foreground"
                       onClick={() => { setEditStation(station); setStationFormOpen(true); }}
+                      aria-label={`Edit counter ${station.counterCode}`}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>

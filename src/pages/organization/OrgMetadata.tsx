@@ -56,6 +56,35 @@ function validateForm(f: FormState): string | null {
 
 /* ── Timezone combobox ──────────────────────────────────────────────────── */
 
+// Curated IANA timezone fallback for browsers that don't support
+// Intl.supportedValuesOf (e.g. Safari < 15.4, older Chromium).
+const FALLBACK_TIMEZONES = [
+  "Africa/Abidjan","Africa/Accra","Africa/Addis_Ababa","Africa/Algiers",
+  "Africa/Cairo","Africa/Casablanca","Africa/Johannesburg","Africa/Lagos",
+  "Africa/Nairobi","Africa/Tunis","America/Anchorage","America/Argentina/Buenos_Aires",
+  "America/Bogota","America/Caracas","America/Chicago","America/Denver",
+  "America/Halifax","America/Los_Angeles","America/Manaus","America/Mexico_City",
+  "America/New_York","America/Phoenix","America/Santiago","America/Sao_Paulo",
+  "America/St_Johns","America/Toronto","America/Vancouver","Asia/Baghdad",
+  "Asia/Bangkok","Asia/Colombo","Asia/Dhaka","Asia/Dubai","Asia/Gaza",
+  "Asia/Hong_Kong","Asia/Jakarta","Asia/Jerusalem","Asia/Kabul","Asia/Karachi",
+  "Asia/Kathmandu","Asia/Kolkata","Asia/Kuala_Lumpur","Asia/Kuwait",
+  "Asia/Macau","Asia/Manila","Asia/Muscat","Asia/Nicosia","Asia/Riyadh",
+  "Asia/Seoul","Asia/Shanghai","Asia/Singapore","Asia/Taipei","Asia/Tashkent",
+  "Asia/Tehran","Asia/Tokyo","Asia/Ulaanbaatar","Asia/Yangon","Atlantic/Azores",
+  "Atlantic/Cape_Verde","Atlantic/Reykjavik","Australia/Adelaide","Australia/Brisbane",
+  "Australia/Darwin","Australia/Hobart","Australia/Melbourne","Australia/Perth",
+  "Australia/Sydney","Europe/Amsterdam","Europe/Athens","Europe/Belgrade",
+  "Europe/Berlin","Europe/Brussels","Europe/Bucharest","Europe/Budapest",
+  "Europe/Copenhagen","Europe/Dublin","Europe/Helsinki","Europe/Istanbul",
+  "Europe/Kaliningrad","Europe/Kiev","Europe/Lisbon","Europe/London",
+  "Europe/Madrid","Europe/Minsk","Europe/Moscow","Europe/Oslo","Europe/Paris",
+  "Europe/Prague","Europe/Rome","Europe/Sofia","Europe/Stockholm","Europe/Vienna",
+  "Europe/Warsaw","Europe/Zurich","Pacific/Auckland","Pacific/Fiji",
+  "Pacific/Guam","Pacific/Honolulu","Pacific/Midway","Pacific/Port_Moresby",
+  "Pacific/Tongatapu","UTC",
+];
+
 function TimezoneCombobox({
   value,
   onChange,
@@ -66,10 +95,16 @@ function TimezoneCombobox({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const allTimezones = useMemo(
-    () => Intl.supportedValuesOf("timeZone"),
-    []
-  );
+  const allTimezones = useMemo(() => {
+    try {
+      if (typeof Intl.supportedValuesOf === "function") {
+        return Intl.supportedValuesOf("timeZone");
+      }
+    } catch {
+      // fall through to curated fallback
+    }
+    return FALLBACK_TIMEZONES;
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();

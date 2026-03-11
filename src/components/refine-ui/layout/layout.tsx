@@ -23,6 +23,7 @@ export function Layout({ children }: PropsWithChildren) {
           <Header />
           <main
             className={cn(
+              "sq-main",
               "@container/main",
               "container",
               "mx-auto",
