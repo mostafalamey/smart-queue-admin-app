@@ -16,7 +16,7 @@ import { dataProvider } from "./providers/data";
 import { authProvider } from "./providers/auth-provider";
 import { accessControlProvider } from "./providers/access-control-provider";
 import QueueControl from "./pages/queue-control";
-import Analytics from "./pages/Analytics";
+import Analytics from "./pages/analytics";
 import OrgMetadata from "./pages/organization/OrgMetadata";
 import UserManagement from "./pages/organization/UserManagement";
 import DepartmentsStructure from "./pages/organization/DepartmentsStructure";
