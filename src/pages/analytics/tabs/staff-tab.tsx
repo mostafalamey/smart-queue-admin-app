@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -48,7 +49,8 @@ interface Props {
 /* ── Component ───────────────────────────────────────────────────────────── */
 
 export function StaffTab({ filters }: Props) {
-  const { data, loading } = useStaffPerformance(filters);
+  const { data, loading, error } = useStaffPerformance(filters);
+  useEffect(() => { if (error) toast.error(error); }, [error]);
   const [sortKey, setSortKey] = useState<SortKey>("ticketsServed");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 

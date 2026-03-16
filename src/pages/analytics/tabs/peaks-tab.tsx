@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -58,8 +59,10 @@ interface Props {
 /* ── Component ───────────────────────────────────────────────────────────── */
 
 export function PeaksTab({ filters }: Props) {
-  const { data: peakData, loading: peakLoading } = usePeakPatterns(filters);
-  const { data: priorityData, loading: priorityLoading } = usePriorityBreakdown(filters);
+  const { data: peakData, loading: peakLoading, error: peakError } = usePeakPatterns(filters);
+  const { data: priorityData, loading: priorityLoading, error: priorityError } = usePriorityBreakdown(filters);
+  useEffect(() => { if (peakError) toast.error(peakError); }, [peakError]);
+  useEffect(() => { if (priorityError) toast.error(priorityError); }, [priorityError]);
 
   // Build a 7×24 lookup and find max value
   const { grid, max, top5 } = useMemo(() => {

@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -41,7 +43,8 @@ interface Props {
 /* ── Component ───────────────────────────────────────────────────────────── */
 
 export function TransfersTab({ filters }: Props) {
-  const { data, loading } = useTransferAnalytics(filters);
+  const { data, loading, error } = useTransferAnalytics(filters);
+  useEffect(() => { if (error) toast.error(error); }, [error]);
 
   if (loading && !data) {
     return (

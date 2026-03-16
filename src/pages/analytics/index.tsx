@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { getStoredUser } from "@/lib/stored-user";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsFiltersBar } from "./analytics-filters";
@@ -33,7 +34,11 @@ export default function Analytics() {
     granularity: "daily",
   });
 
-  const { data: kpiData, loading: kpiLoading, refetch } = useDashboardKPIs(filters);
+  const { data: kpiData, loading: kpiLoading, error: kpiError, refetch } = useDashboardKPIs(filters);
+
+  useEffect(() => {
+    if (kpiError) toast.error(kpiError);
+  }, [kpiError]);
 
   const handleRefresh = useCallback(() => {
     refetch();

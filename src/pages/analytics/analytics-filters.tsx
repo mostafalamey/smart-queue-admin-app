@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { getStoredUser } from "@/lib/stored-user";
 import { apiJson } from "@/lib/api-client";
 import {
@@ -124,6 +125,10 @@ export function AnalyticsFiltersBar({ filters, onFiltersChange, onRefresh }: Pro
 
   const applyCustomRange = () => {
     if (customFrom && customTo) {
+      if (customFrom > customTo) {
+        toast.error("Start date must be before or equal to end date");
+        return;
+      }
       onFiltersChange({ ...filters, from: isoDate(customFrom), to: isoDate(customTo) });
     }
   };

@@ -19,6 +19,8 @@ import {
   AreaChart,
   Legend,
 } from "recharts";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import type {
   AnalyticsFilters,
   TrendPoint,
@@ -89,11 +91,17 @@ export function OverviewTab({ filters, isAdmin }: Props) {
   const svcFilters = { ...filters, metric: "serviceTime" as const };
   const volFilters = { ...filters, metric: "volume" as const };
 
-  const { data: waitData, loading: waitLoading } = useTrends(waitFilters);
-  const { data: svcData, loading: svcLoading } = useTrends(svcFilters);
-  const { data: volData, loading: volLoading } = useTrends(volFilters);
-  const { data: deptData, loading: deptLoading } = useDepartmentComparison(filters, isAdmin);
-  const { data: distData, loading: distLoading } = useServiceDistribution(filters);
+  const { data: waitData, loading: waitLoading, error: waitError } = useTrends(waitFilters);
+  const { data: svcData, loading: svcLoading, error: svcError } = useTrends(svcFilters);
+  const { data: volData, loading: volLoading, error: volError } = useTrends(volFilters);
+  const { data: deptData, loading: deptLoading, error: deptError } = useDepartmentComparison(filters, isAdmin);
+  const { data: distData, loading: distLoading, error: distError } = useServiceDistribution(filters);
+
+  useEffect(() => { if (waitError) toast.error(waitError); }, [waitError]);
+  useEffect(() => { if (svcError) toast.error(svcError); }, [svcError]);
+  useEffect(() => { if (volError) toast.error(volError); }, [volError]);
+  useEffect(() => { if (deptError) toast.error(deptError); }, [deptError]);
+  useEffect(() => { if (distError) toast.error(distError); }, [distError]);
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
