@@ -13,7 +13,11 @@ import type { AnalyticsFilters } from "./types";
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
 function isoToday(): string {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 /* ── Page ─────────────────────────────────────────────────────────────────── */

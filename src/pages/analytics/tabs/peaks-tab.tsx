@@ -174,7 +174,7 @@ function HeatmapGrid({ grid, max }: { grid: Map<string, number>; max: number }) 
     <TooltipProvider delayDuration={100}>
       <div className="overflow-x-auto">
         {/* Hour labels */}
-        <div className="ml-10 grid grid-cols-24 gap-px text-center">
+        <div className="ml-10 grid grid-cols-[repeat(24,minmax(0,1fr))] gap-px text-center">
           {HOURS.map((h) => (
             <span key={h} className="text-[10px] tabular-nums text-muted-foreground">
               {h.toString().padStart(2, "0")}
@@ -188,7 +188,7 @@ function HeatmapGrid({ grid, max }: { grid: Map<string, number>; max: number }) 
             <span className="w-10 shrink-0 text-right text-[11px] font-medium text-muted-foreground pr-1.5">
               {day}
             </span>
-            <div className="grid flex-1 grid-cols-24 gap-px">
+            <div className="grid flex-1 grid-cols-[repeat(24,minmax(0,1fr))] gap-px">
               {HOURS.map((h) => {
                 const count = grid.get(`${di}-${h}`) ?? 0;
                 return (

@@ -1,9 +1,8 @@
 /**
  * Analytics data-fetching hooks.
  *
- * When VITE_DATA_PROVIDER=mock (or by default when the env var is unset and
- * the backend analytics endpoints are not yet available), the hooks return
- * mock data. Switch to VITE_DATA_PROVIDER=http once the backend is ready.
+ * Hooks hit the real backend by default. Set VITE_DATA_PROVIDER=mock to
+ * return mock data instead (useful for UI development without a running server).
  *
  * Follows the same patterns as queue-control/use-queue-data.ts:
  * - apiJson<T>() for real fetches

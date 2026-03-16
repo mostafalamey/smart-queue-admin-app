@@ -194,9 +194,8 @@ Returns: `Array<{ priorityName: string, priorityWeight: number, count: number, a
 - [x] Hooks accept AbortSignal for cleanup on unmount
 
 ### B2. Mock analytics data provider
-
-- [x] Create `src/pages/analytics/mock-analytics-data.ts` — realistic mock data for all response types
-- [x] Create or extend `src/providers/mock-data-provider.ts` to intercept analytics API paths and return mock data
+ - [x] Wire analytics mocks using the existing per-hook `USE_MOCK` + mock generator pattern in `src/pages/analytics/use-analytics-data.ts` (no shared `src/providers/mock-data-provider.ts`)
+ - [x] Ensure each analytics hook can be switched between real `apiJson` calls and local mock data via its own configuration/flag
 - [x] Toggle via `VITE_DATA_PROVIDER=mock|http` environment variable
 - [x] Verify all frontend components render correctly against mock data before backend is ready
 

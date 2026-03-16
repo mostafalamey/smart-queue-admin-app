@@ -64,9 +64,9 @@ const deptConfig: ChartConfig = {
 /* ── Label formatters ────────────────────────────────────────────────────── */
 
 function shortPeriod(period: string): string {
-  if (period.startsWith("W")) return period.slice(1, 6);
-  if (period.includes("T")) return period.slice(11, 16);
-  return period.slice(5);
+  if (period.startsWith("W")) return "W" + period.slice(6); // W2026-03-16 → W03-16
+  if (period.includes("T")) return period.slice(11, 16);    // 2026-03-16T14:00:00Z → 14:00
+  return period.slice(5);                                    // 2026-03-16 → 03-16
 }
 
 function fmtDuration(sec: number): string {

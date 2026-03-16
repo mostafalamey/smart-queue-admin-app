@@ -76,17 +76,22 @@ export function StaffTab({ filters }: Props) {
     [sorted],
   );
 
-  const SortableHead = ({ label, col }: { label: string; col: SortKey }) => (
-    <TableHead
-      className="cursor-pointer select-none whitespace-nowrap"
-      onClick={() => toggle(col)}
-    >
-      <span className="inline-flex items-center gap-1">
-        {label}
-        <ArrowUpDown className={`h-3 w-3 ${sortKey === col ? "text-foreground" : "text-muted-foreground/40"}`} />
-      </span>
-    </TableHead>
-  );
+  const SortableHead = ({ label, col }: { label: string; col: SortKey }) => {
+    const isActive = sortKey === col;
+    const ariaSort = isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+    return (
+      <TableHead aria-sort={ariaSort} className="whitespace-nowrap p-0">
+        <button
+          type="button"
+          onClick={() => toggle(col)}
+          className="inline-flex w-full items-center gap-1 px-2 py-3 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        >
+          {label}
+          <ArrowUpDown className={`h-3 w-3 ${isActive ? "text-foreground" : "text-muted-foreground/40"}`} />
+        </button>
+      </TableHead>
+    );
+  };
 
   if (loading && !data) {
     return (

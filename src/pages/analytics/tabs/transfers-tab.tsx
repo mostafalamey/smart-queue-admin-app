@@ -125,7 +125,7 @@ export function TransfersTab({ filters }: Props) {
                   style={{ backgroundColor: pieColors[i % pieColors.length] }}
                 />
                 <span className="text-muted-foreground">
-                  {r.reasonEn} ({r.percentage.toFixed(0)}%)
+                  {r.reasonEn} ({(r.percentage * 100).toFixed(0)}%)
                 </span>
               </div>
             ))}
