@@ -396,7 +396,7 @@ function ServicesPanel({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-red-400/40 hover:text-red-400"
+                      className="h-7 w-7 text-red-400/40 hover:text-foreground"
                       disabled={deactivatingServiceId === s.id || togglingServiceId === s.id}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -528,7 +528,7 @@ function DepartmentCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                className="h-8 w-8 text-red-400/40 hover:text-foreground"
                 disabled={deactivatingDeptId === dept.id || togglingDeptId === dept.id}
               >
                 <Trash2 className="h-3.5 w-3.5" />

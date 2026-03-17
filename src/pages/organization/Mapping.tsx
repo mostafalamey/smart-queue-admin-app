@@ -682,7 +682,7 @@ export default function Mapping() {
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="ghost" size="icon"
-                        className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                        className="h-8 w-8 text-red-400/40 hover:text-foreground"
                         disabled={togglingDeviceId === device.id}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -782,7 +782,7 @@ export default function Mapping() {
                       <AlertDialogTrigger asChild>
                         <Button
                           variant="ghost" size="icon"
-                          className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                          className="h-8 w-8 text-red-400/40 hover:text-foreground"
                           disabled={togglingStationId === station.id}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

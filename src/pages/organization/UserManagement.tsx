@@ -573,7 +573,7 @@ export default function UserManagement() {
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="ghost" size="icon"
-                        className="h-8 w-8 text-red-400/40 hover:text-red-400"
+                        className="h-8 w-8 text-red-400/40 hover:text-foreground"
                         disabled={togglingId === u.id}
                         title="Deactivate user"
                       >
