@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { getStoredUser } from "@/lib/stored-user";
-import { useDepartments, useServices, useQueueData } from "./use-queue-data";
+import { useDepartments, useServices, useQueueData, useAggregateQueueData } from "./use-queue-data";
 import { QueueSummaryCards } from "./queue-summary";
 import { NowServing } from "./now-serving";
 import { WaitingList } from "./waiting-list";
@@ -22,6 +22,7 @@ import { RefreshCw } from "lucide-react";
 export default function QueueControl() {
   const user = getStoredUser();
   const isManager = user?.role === "MANAGER";
+  const isAdmin = user?.role === "ADMIN";
 
   /* ── Department / Service selection ──────────────────────────────────── */
 
@@ -37,8 +38,33 @@ export default function QueueControl() {
   }, [isManager, user?.departmentId]);
 
   const { services, loading: svcLoading } = useServices(departmentId);
-  const { summary, waitingList, loading: queueLoading, error, refetch } =
+
+  // Per-service data (used when a specific service is selected)
+  const { summary: svcSummary, waitingList: svcWaitingList, loading: svcQueueLoading, error: svcError, refetch: svcRefetch } =
     useQueueData(serviceId);
+
+  // Aggregate scope for admin:
+  // - no department → "all"
+  // - department selected but no service → departmentId
+  const aggregateScope: "all" | string | null = (() => {
+    if (!isAdmin) return null;
+    if (serviceId) return null; // per-service data takes over
+    if (!departmentId) return "all";
+    return departmentId;
+  })();
+
+  const { summary: aggSummary, waitingList: aggWaitingList, loading: aggLoading, error: aggError, refetch: aggRefetch } =
+    useAggregateQueueData(aggregateScope);
+
+  // Active data set
+  const summary = serviceId ? svcSummary : aggSummary;
+  const waitingList = serviceId ? svcWaitingList : aggWaitingList;
+  const queueLoading = serviceId ? svcQueueLoading : aggLoading;
+  const error = serviceId ? svcError : aggError;
+  const refetch = serviceId ? svcRefetch : aggRefetch;
+
+  // Whether we currently have data to display (admin sees data without selecting a service)
+  const hasActiveScope = Boolean(serviceId || aggregateScope);
 
   const handleDepartmentChange = (id: string) => {
     setDepartmentId(id || null);
@@ -155,7 +181,7 @@ export default function QueueControl() {
         </div>
 
         {/* Manual refresh */}
-        {serviceId && (
+        {hasActiveScope && (
           <Button
             variant="outline"
             size="icon"
@@ -190,13 +216,24 @@ export default function QueueControl() {
       )}
 
       {/* Queue Dashboard OR empty state */}
-      {serviceId ? (
+      {hasActiveScope ? (
         <div className="space-y-4">
+          {/* Aggregate scope label for admin without a service selected */}
+          {isAdmin && !serviceId && (
+            <p className="text-xs text-muted-foreground">
+              {!departmentId
+                ? "Showing combined data across all departments and services."
+                : "Showing combined data for all services in the selected department."}
+            </p>
+          )}
           <QueueSummaryCards summary={summary} loading={queueLoading} />
-          <NowServing
-            ticket={summary?.nowServing ?? null}
-            loading={queueLoading}
-          />
+          {/* NowServing is station-specific; only meaningful for a single service */}
+          {serviceId && (
+            <NowServing
+              ticket={summary?.nowServing ?? null}
+              loading={queueLoading}
+            />
+          )}
           <WaitingList
             tickets={waitingList?.tickets ?? []}
             loading={queueLoading}

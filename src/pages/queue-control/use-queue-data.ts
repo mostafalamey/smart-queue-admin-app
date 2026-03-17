@@ -129,3 +129,68 @@ export function useQueueData(serviceId: string | null) {
 
   return { summary, waitingList, loading, error, refetch: fetchData };
 }
+
+/* ── Aggregate queue data (department or all) — admin use ───────────────── */
+
+/**
+ * Fetches aggregated queue data:
+ * - scope === "all"  → /queue/all/summary + /queue/all/waiting (admin only)
+ * - scope === string → /queue/departments/:id/summary + /queue/departments/:id/waiting
+ */
+export function useAggregateQueueData(scope: "all" | string | null) {
+  const [summary, setSummary] = useState<QueueSummary | null>(null);
+  const [waitingList, setWaitingList] = useState<WaitingListResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const hasDataRef = useRef(false);
+
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
+    if (!scope) {
+      setSummary(null);
+      setWaitingList(null);
+      return;
+    }
+
+    if (!hasDataRef.current) setLoading(true);
+    setError(null);
+
+    try {
+      const base =
+        scope === "all"
+          ? "/queue/all"
+          : `/queue/departments/${encodeURIComponent(scope)}`;
+
+      const [s, w] = await Promise.all([
+        apiJson<QueueSummary>(`${base}/summary`, { signal }),
+        apiJson<WaitingListResponse>(`${base}/waiting`, { signal }),
+      ]);
+      setSummary(s);
+      setWaitingList(w);
+      hasDataRef.current = true;
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      const e = err as Record<string, unknown>;
+      const msg =
+        (typeof e?.message === "string" && e.message) ||
+        (typeof e?.error === "string" && e.error) ||
+        (err instanceof Error ? err.message : "Failed to load queue data");
+      setError(msg);
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, [scope]);
+
+  useEffect(() => {
+    hasDataRef.current = false;
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    if (!scope) return () => controller.abort();
+    const id = setInterval(() => fetchData(controller.signal), POLL_MS);
+    return () => {
+      controller.abort();
+      clearInterval(id);
+    };
+  }, [fetchData, scope]);
+
+  return { summary, waitingList, loading, error, refetch: fetchData };
+}

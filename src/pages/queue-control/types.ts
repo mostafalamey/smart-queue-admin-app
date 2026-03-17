@@ -43,6 +43,8 @@ export interface WaitingTicket {
   ticketNumber: string;
   priorityWeight: number;
   createdAt: string;
+  /** Present in aggregate (department/all) views to identify the source service. */
+  serviceName?: string;
 }
 
 export interface WaitingListResponse {

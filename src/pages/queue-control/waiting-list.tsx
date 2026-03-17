@@ -60,6 +60,9 @@ export function WaitingList({ tickets, loading, onSelectTicket }: Props) {
             <TableRow>
               <TableHead className="w-14">#</TableHead>
               <TableHead>Ticket</TableHead>
+              {tickets[0]?.serviceName !== undefined && (
+                <TableHead>Service</TableHead>
+              )}
               <TableHead>Priority</TableHead>
               <TableHead className="text-right">Wait Time</TableHead>
             </TableRow>
@@ -87,6 +90,11 @@ export function WaitingList({ tickets, loading, onSelectTicket }: Props) {
                   <TableCell className="font-mono text-sm font-medium">
                     {ticket.ticketNumber}
                   </TableCell>
+                  {ticket.serviceName !== undefined && (
+                    <TableCell className="text-sm text-muted-foreground">
+                      {ticket.serviceName}
+                    </TableCell>
+                  )}
                   <TableCell>
                     <Badge variant={variant}>{label}</Badge>
                   </TableCell>
