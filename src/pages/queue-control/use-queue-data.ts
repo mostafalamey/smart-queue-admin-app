@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiJson } from "@/lib/api-client";
+import { useServiceSubscription, useQueueEvent } from "@/hooks/use-socket";
 import type {
   Department,
   Service,
@@ -7,7 +8,8 @@ import type {
   WaitingListResponse,
 } from "./types";
 
-const POLL_MS = 10_000;
+/** Fallback polling interval — used as a safety net alongside WebSocket. */
+const POLL_MS = 30_000;
 
 /* ── Departments (fetched once) ─────────────────────────────────────────── */
 
@@ -68,7 +70,7 @@ export function useServices(departmentId: string | null) {
   return { services, loading };
 }
 
-/* ── Queue data (summary + waiting list, polled every 10 s) ─────────────── */
+/* ── Queue data (summary + waiting list, WebSocket + fallback polling) ──── */
 
 export function useQueueData(serviceId: string | null) {
   const [summary, setSummary] = useState<QueueSummary | null>(null);
@@ -80,6 +82,7 @@ export function useQueueData(serviceId: string | null) {
   // True once we have received a successful response for the current serviceId;
   // background polls skip setLoading(true) to avoid re-showing skeletons.
   const hasDataRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async (signal?: AbortSignal) => {
     if (!serviceId) {
@@ -114,15 +117,25 @@ export function useQueueData(serviceId: string | null) {
     }
   }, [serviceId]);
 
+  // WebSocket: refetch on any queue/now-serving event for this service
+  useServiceSubscription(serviceId, () => {
+    if (controllerRef.current) {
+      fetchData(controllerRef.current.signal);
+    }
+  });
+
   useEffect(() => {
     // Reset so the first fetch for this serviceId always shows the skeleton.
     hasDataRef.current = false;
     const controller = new AbortController();
+    controllerRef.current = controller;
     fetchData(controller.signal);
-    if (!serviceId) return () => controller.abort();
+    if (!serviceId) return () => { controller.abort(); controllerRef.current = null; };
+    // Fallback polling (longer interval since WebSocket is primary)
     const id = setInterval(() => fetchData(controller.signal), POLL_MS);
     return () => {
       controller.abort();
+      controllerRef.current = null;
       clearInterval(id);
     };
   }, [fetchData, serviceId]);
@@ -143,6 +156,7 @@ export function useAggregateQueueData(scope: "all" | string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasDataRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async (signal?: AbortSignal) => {
     if (!scope) {
@@ -180,14 +194,23 @@ export function useAggregateQueueData(scope: "all" | string | null) {
     }
   }, [scope]);
 
+  // WebSocket: listen for any queue event and refetch aggregate data
+  useQueueEvent("queue.updated", () => {
+    if (controllerRef.current) {
+      fetchData(controllerRef.current.signal);
+    }
+  });
+
   useEffect(() => {
     hasDataRef.current = false;
     const controller = new AbortController();
+    controllerRef.current = controller;
     fetchData(controller.signal);
-    if (!scope) return () => controller.abort();
+    if (!scope) return () => { controller.abort(); controllerRef.current = null; };
     const id = setInterval(() => fetchData(controller.signal), POLL_MS);
     return () => {
       controller.abort();
+      controllerRef.current = null;
       clearInterval(id);
     };
   }, [fetchData, scope]);

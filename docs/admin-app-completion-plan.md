@@ -30,10 +30,11 @@ The admin app has a **production-quality shell** with zero business logic:
 | **Auth provider (Refine `authProvider`)** | ✅ Implemented (Phase A) |
 | **Access control provider (RBAC)** | ✅ Implemented (Phase B) |
 | **Queue Control page** | ✅ Implemented (Phase C) — full dashboard, search, detail, priority change |
-| **WebSocket / realtime integration** | **Not implemented** |
+| **WebSocket / realtime integration** | ✅ Implemented (Phase H) — Socket.IO client, Queue Control & Analytics live updates, connection indicator |
 | **i18n (Arabic/English)** | **Not configured** |
 | **Organization sub-pages (5 pages)** | ✅ Implemented (Phase D) — Metadata, Users, Departments, Mapping, Transfer Reasons |
-| **User Experience, Analytics pages** | **Empty stubs** |
+| **Analytics page** | ✅ Implemented (Phase F) — KPI cards, 4-tab dashboard, 8 backend endpoints |
+| **User Experience page** | **Empty stub** |
 
 ### Backend Endpoint Availability
 
@@ -49,7 +50,7 @@ The admin app has a **production-quality shell** with zero business logic:
 | **Department/service CRUD** | **Not yet built** |
 | **User management CRUD** | **Not yet built** |
 | **Device registry (list/create devices)** | **Not yet built** |
-| **Analytics overview endpoint** | **Not yet built** |
+| Analytics endpoints (8 routes) | ✅ Available (`GET /analytics/*`) |
 | **Audit log listing** | **Not yet built** |
 | Ticket detail lookup by ID | ✅ Available (`GET /admin/tickets/:id`) |
 | Ticket search by number/phone | ✅ Available (`GET /admin/tickets/search`) |
@@ -252,28 +253,40 @@ All sub-tabs are accessible to Admin and IT roles.
 
 ---
 
-### Phase F — Analytics Page
+### Phase F — Analytics Page ✅
 **Goal:** Performance KPIs, trends, and predictive insights.
 
 **Priority:** Medium — Admin + Manager operational intelligence.
 
-#### F.1 — KPI Cards
-**Todos:**
-1. **Summary cards** — average wait time, average service time, completion rate, currently waiting, tickets issued today, tickets served, in-progress, no-show rate.
-   - *Backend dependency:* `GET /analytics/overview` — **needs backend work**.
-2. **Department filter** (Admin: all, Manager: locked to own).
-3. **Time range filter** (today, 7 days, 30 days, custom).
+**Completed:** 2026-04-12 — Full analytics dashboard with 8 KPI cards, 4 tab layout (Overview, Staff, Transfers, Peaks), 8 backend endpoints, mock data provider, and RBAC enforcement. Predictive insights deferred.
 
-#### F.2 — Charts & Trends
-**Todos:**
-1. **Wait time trend chart** — line chart over time (recharts is already installed).
-2. **Department performance comparison** — bar chart.
-3. **Service distribution** — pie/donut chart.
-4. **Ticket volume breakdown** — stacked area chart.
-5. **Throughput analysis** — completion rate, tickets/hour, estimated clear time.
-   - *Backend dependency:* `GET /analytics/trends`, `GET /analytics/throughput` — **needs backend work**.
+**Frontend files:** `src/pages/analytics/` — index.tsx, types.ts, use-analytics-data.ts (8 polling hooks), analytics-filters.tsx, kpi-cards.tsx, mock-analytics-data.ts, tabs/overview-tab.tsx, tabs/staff-tab.tsx, tabs/transfers-tab.tsx, tabs/peaks-tab.tsx.
 
-#### F.3 — Predictive Insights (Future)
+**Backend endpoints built:** `GET /analytics/dashboard`, `/trends`, `/departments`, `/service-distribution`, `/staff-performance`, `/transfers`, `/peak-patterns`, `/priority-breakdown` — all RBAC-guarded (Admin + Manager).
+
+#### F.1 — KPI Cards ✅
+**Todos:**
+1. ✅ **Summary cards** — 8 KPI cards (tickets issued, tickets served, currently waiting, currently serving, avg wait time, avg service time, no-show rate, completion rate) with delta indicators and gradient accents.
+   - Backend: `GET /analytics/dashboard` — built.
+2. ✅ **Department filter** (Admin: all, Manager: locked to own).
+3. ✅ **Time range filter** — 6 presets (Today, Yesterday, This Week, This Month, Last 30, Custom) + calendar picker.
+4. ✅ **Granularity toggle** — Hourly / Daily / Weekly.
+5. Optional **service selector** — not built (plan marks as optional).
+
+#### F.2 — Charts & Trends ✅
+**Todos:**
+1. ✅ **Wait time trend chart** — AreaChart with gradient fill (recharts).
+2. ✅ **Service time trend chart** — AreaChart.
+3. ✅ **Department performance comparison** — horizontal BarChart (Admin only).
+4. ✅ **Service distribution** — donut PieChart with legend chips.
+5. ✅ **Ticket volume breakdown** — BarChart.
+6. ✅ **Throughput analysis** — via trends hook with `metric: "throughput"`.
+7. ✅ **Staff performance** — sortable table + top-10 horizontal bar chart.
+8. ✅ **Transfer analytics** — transfer rate KPI banner, reasons donut PieChart, top transfer flows table.
+9. ✅ **Peak hours heatmap** — custom CSS grid 7×24, 5-step color ramp, hover tooltip, color scale legend.
+10. ✅ **Priority breakdown** — bar chart + summary table.
+
+#### F.3 — Predictive Insights (Future — Deferred)
 **Todos:**
 1. **Wait time estimation widget** — with confidence indicator.
 2. **Peak hours prediction** — based on historical patterns.
@@ -282,11 +295,7 @@ All sub-tabs are accessible to Admin and IT roles.
 5. **Key predictive insights** summary.
 6. **"No historical data available yet" placeholder** — shown until sufficient data exists.
 
-**Backend dependencies (new endpoints needed):**
-- `GET /analytics/overview` — KPI summary
-- `GET /analytics/trends` — time-series data
-- `GET /analytics/throughput` — throughput metrics
-- `GET /analytics/predictions` — predictive insights (later phase)
+**Backend dependencies:** All core endpoints built. Predictive endpoint (`GET /analytics/predictions`) deferred.
 
 **Branch:** `feature/admin-analytics`
 
@@ -311,20 +320,33 @@ All sub-tabs are accessible to Admin and IT roles.
 
 ---
 
-### Phase H — WebSocket Integration & Live Updates
+### Phase H — WebSocket Integration & Live Updates ✅
 **Goal:** Real-time queue updates across the admin app.
 
 **Priority:** Medium — enhances Queue Control and Analytics.
 
-**Todos:**
-1. **Create a Socket.IO client singleton** — connect to `/realtime/socket.io` with JWT auth.
-2. **Auto-reconnect logic** — handle disconnects, re-authenticate on token refresh.
-3. **Queue Control integration** — subscribe to `queue.updated` for the selected service; auto-refresh summary + waiting list.
-4. **Now-serving live indicator** — update in real-time when a ticket is called.
-5. **Analytics live counters** — optionally update today's KPIs in real-time.
-6. **Connection status indicator** — show connected/disconnected state in the header or footer.
+**Completed:** 2026-04-12
 
-**Backend dependencies:** None — WebSocket gateway is fully available.
+**Files created:**
+- `src/lib/socket.ts` — Socket.IO client singleton with JWT auth, auto-reconnect, token refresh on UNAUTHORIZED
+- `src/hooks/use-socket.ts` — React context provider (`SocketProvider`), `useSocketStatus()`, `useServiceSubscription()`, `useQueueEvent()` hooks
+
+**Files modified:**
+- `src/pages/queue-control/use-queue-data.ts` — WS-triggered refetch (polling increased from 10s to 30s as fallback)
+- `src/pages/analytics/use-analytics-data.ts` — dashboard KPIs live-refresh on `queue.updated` events
+- `src/components/refine-ui/layout/header.tsx` — connection status indicator (wifi icon with tooltip)
+- `src/App.tsx` — `SocketProvider` wrapping authenticated routes
+- `src/providers/auth-provider.ts` — `disconnectSocket()` on logout
+
+**Todos:**
+1. ✅ **Create a Socket.IO client singleton** — connects to `/realtime/socket.io` with JWT auth via `auth.token` handshake.
+2. ✅ **Auto-reconnect logic** — Socket.IO built-in reconnection with exponential backoff (1s–30s). On `connect_error`, detects auth failures and calls `silentRefresh()` to update token before next attempt.
+3. ✅ **Queue Control integration** — `useServiceSubscription` subscribes to `service:{serviceId}` room; `queue.updated` and `now-serving.updated` events trigger immediate data refetch. Polling kept at 30s as safety net.
+4. ✅ **Now-serving live indicator** — `now-serving.updated` events are received via the service subscription and trigger refetch of summary data (which includes now-serving info).
+5. ✅ **Analytics live counters** — Dashboard KPIs hook (`useDashboardKPIs`) listens to `queue.updated` events for immediate refetch.
+6. ✅ **Connection status indicator** — Wifi/WifiOff icon in the desktop header with tooltip showing connected/disconnected state. Pulses red when disconnected.
+
+**Backend dependencies:** None — WebSocket gateway was already available.
 
 **Branch:** `feature/admin-realtime`
 
@@ -382,7 +404,7 @@ Phases C through F can be developed **in parallel** once B is complete, subject 
 | 3 | C — Queue Control | ✅ Complete — dashboard, search, detail, priority change (WebSocket deferred to Phase H) |
 | 4 | D — Organization | ✅ Complete — D.1–D.5 delivered (user mgmt, dept CRUD, mapping, org metadata, transfer reasons) |
 | 5 | E — User Experience | Not started (needs patient text config endpoint) |
-| 6 | F — Analytics | Not started (needs analytics endpoints) |
+| 6 | F — Analytics | ✅ Complete — F.1 KPI Cards + F.2 Charts & Trends done; F.3 Predictive deferred |
 | 7 | G — i18n | Not started (independent) |
 | 8 | H — Realtime | Not started (independent, after C) |
 | 9 | I — Polish | Last |

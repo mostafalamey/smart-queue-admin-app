@@ -13,7 +13,14 @@ import {
   useLogout,
   useRefineOptions,
 } from "@refinedev/core";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, WifiIcon, WifiOffIcon } from "lucide-react";
+import { useSocketStatus } from "@/hooks/use-socket";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const Header = () => {
   const { isMobile } = useSidebar();
@@ -41,9 +48,33 @@ function DesktopHeader() {
         "z-40"
       )}
     >
+      <ConnectionIndicator />
       <ThemeToggle />
       <UserDropdown />
     </header>
+  );
+}
+
+function ConnectionIndicator() {
+  const { connected } = useSocketStatus();
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {connected ? (
+              <WifiIcon className="h-3.5 w-3.5 text-emerald-500" />
+            ) : (
+              <WifiOffIcon className="h-3.5 w-3.5 text-destructive animate-pulse" />
+            )}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          {connected ? "Live updates connected" : "Live updates disconnected — using polling"}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 

@@ -14,6 +14,7 @@ import {
   getStoredUser,
   setStoredUser,
 } from "@/lib/stored-user";
+import { disconnectSocket } from "@/lib/socket";
 
 /** Allowed roles for the admin app (Staff cannot access admin). */
 const ADMIN_APP_ROLES = ["ADMIN", "IT", "MANAGER"] as const;
@@ -113,6 +114,7 @@ export const authProvider: AuthProvider = {
       }
     }
 
+    disconnectSocket();
     clearTokens();
     clearStoredUser();
 

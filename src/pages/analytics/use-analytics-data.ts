@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { apiJson } from "@/lib/api-client";
+import { getSocket } from "@/lib/socket";
 import type {
   AnalyticsFilters,
   DashboardResponse,
@@ -62,6 +63,8 @@ function usePolledData<T>(
   fetcher: (signal: AbortSignal) => Promise<T>,
   deps: unknown[],
   enabled = true,
+  /** Socket event name that triggers an immediate refetch (e.g. "queue.updated"). */
+  liveEvent?: string,
 ): UsePollingResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -108,11 +111,25 @@ function usePolledData<T>(
     const id = setInterval(run, POLL_MS);
     refetchRef.current = () => run();
 
+    // Live event: refetch immediately when socket event fires
+    let socket: ReturnType<typeof getSocket> | null = null;
+    if (liveEvent) {
+      try {
+        socket = getSocket();
+        socket.on(liveEvent, run);
+      } catch {
+        // Socket not available — polling is the fallback
+      }
+    }
+
     return () => {
       controller.abort();
       clearInterval(id);
+      if (socket && liveEvent) {
+        socket.off(liveEvent, run);
+      }
     };
-  }, [stableFetcher, enabled]);
+  }, [stableFetcher, enabled, liveEvent]);
 
   return {
     data,
@@ -137,6 +154,8 @@ export function useDashboardKPIs(filters: AnalyticsFilters) {
       return apiJson<DashboardResponse>(`/analytics/dashboard${q}`, { signal });
     },
     [filters.from, filters.to, filters.departmentId, filters.serviceId],
+    true,
+    "queue.updated",
   );
 }
 

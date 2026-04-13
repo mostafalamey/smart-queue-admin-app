@@ -32,6 +32,7 @@ import { ChartNoAxesCombined, ListStart, Network, Cast, Building, UsersRound, Us
 import { Layout } from "./components/refine-ui/layout/layout";
 import { getStoredUser } from "./lib/stored-user";
 import { Navigate } from "react-router";
+import { SocketProvider } from "./hooks/use-socket";
 
 /**
  * Route guard: redirects to /change-password if the current user
@@ -155,9 +156,11 @@ function App() {
                       fallback={<CatchAllNavigate to="/login" />}
                     >
                       <RequirePasswordChanged>
-                        <Layout>
-                          <Outlet />
-                        </Layout>
+                        <SocketProvider>
+                          <Layout>
+                            <Outlet />
+                          </Layout>
+                        </SocketProvider>
                       </RequirePasswordChanged>
                     </Authenticated>
                   }
